@@ -466,6 +466,111 @@
     color:var(--rust);
   }
 
+  /* Supplement tracker */
+  section.supps{
+    padding:32px 20px 36px;
+    border-top:1px solid var(--border);
+    margin-top:12px;
+  }
+  .supp-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .supp-count{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--text-dim);
+  }
+  .supp-row{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    border:1px solid var(--border);
+    background:var(--surface);
+    padding:12px 14px;
+    margin-bottom:10px;
+  }
+  .supp-check{
+    flex:0 0 auto;
+    width:26px; height:26px;
+    margin-top:2px;
+    border:1px solid var(--border-strong);
+    background:var(--bg);
+    color:var(--text-faint);
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    user-select:none;
+  }
+  .supp-row.taken .supp-check{
+    background:var(--rust-dim);
+    border-color:var(--rust);
+    color:var(--text);
+  }
+  .supp-main{ flex:1; min-width:0; }
+  .supp-name{
+    font-family:'Oswald',sans-serif;
+    font-size:15px;
+    font-weight:600;
+    text-transform:uppercase;
+  }
+  .supp-name .opt{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    color:var(--text-faint);
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    margin-left:8px;
+  }
+  .supp-fields{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px 14px;
+    margin-top:6px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--text-faint);
+  }
+  .supp-fields label{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .supp-dose{ width:150px; }
+  .supp-time{ width:80px; }
+  .supp-notes{ width:170px; }
+  .supp-del{
+    flex:0 0 auto;
+    background:none;
+    border:1px solid var(--border-strong);
+    color:var(--text-faint);
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    width:24px; height:24px;
+    margin-top:3px;
+    cursor:pointer;
+  }
+  .supp-del:hover{ color:var(--rust); border-color:var(--rust-dim); }
+  .supp-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    margin-top:14px;
+  }
+  .supp-actions button{
+    background:none;
+    border:1px solid var(--border-strong);
+    color:var(--text-faint);
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    padding:6px 10px;
+    cursor:pointer;
+  }
+  .supp-actions button:hover{ color:var(--text); border-color:var(--text-faint); }
+
   .reset-row{
     margin-top:24px;
     text-align:right;
@@ -523,6 +628,23 @@
 <div class="wrap">
   <div id="day-content"></div>
 </div>
+
+<section class="supps">
+  <div class="wrap">
+    <div class="supp-head">
+      <div>
+        <div class="section-label">Daily supplements</div>
+        <div class="section-title">Taken today</div>
+      </div>
+      <div class="supp-count" id="supp-count"></div>
+    </div>
+    <div id="supp-list"></div>
+    <div class="supp-actions">
+      <button id="supp-add-btn">Add supplement</button>
+      <button id="supp-reset-btn">Reset today</button>
+    </div>
+  </div>
+</section>
 
 <footer class="notes">
   <div class="wrap">
@@ -1000,6 +1122,138 @@ function initBodyweight(){
   });
 }
 
+// --- Daily supplement tracker ---
+const SUPP_DEFAULTS = [
+  { id:"creatine", name:"Creatine", dose:"5g" },
+  { id:"caffeine", name:"Caffeine", dose:"200–400mg pre-workout" },
+  { id:"electrolytes", name:"Electrolytes / sodium", dose:"", optional:true },
+  { id:"protein", name:"Protein powder", dose:"", optional:true },
+  { id:"preworkout", name:"Pre-workout", dose:"", optional:true },
+];
+
+function getSuppDefs(){
+  try{ return JSON.parse(localStorage.getItem('ledger-supp-defs')) || { doses:{}, custom:[] }; }
+  catch(e){ return { doses:{}, custom:[] }; }
+}
+function saveSuppDefs(defs){
+  localStorage.setItem('ledger-supp-defs', JSON.stringify(defs));
+}
+function getSuppLog(){
+  try{ return JSON.parse(localStorage.getItem('ledger-supp-log')) || {}; }
+  catch(e){ return {}; }
+}
+function saveSuppLog(log){
+  localStorage.setItem('ledger-supp-log', JSON.stringify(log));
+}
+function getSuppToday(){
+  return getSuppLog()[localDateStr()] || {};
+}
+function saveSuppEntry(id, patch){
+  const log = getSuppLog();
+  const today = localDateStr();
+  log[today] = log[today] || {};
+  log[today][id] = Object.assign(log[today][id] || {}, patch);
+  saveSuppLog(log);
+}
+
+function suppList(){
+  const defs = getSuppDefs();
+  const base = SUPP_DEFAULTS.map(s=>({
+    ...s,
+    dose: defs.doses[s.id] !== undefined ? defs.doses[s.id] : s.dose,
+  }));
+  const custom = defs.custom.map(s=>({
+    ...s,
+    dose: defs.doses[s.id] !== undefined ? defs.doses[s.id] : (s.dose || ''),
+    custom: true,
+  }));
+  return base.concat(custom);
+}
+
+function renderSupplements(){
+  const listEl = document.getElementById('supp-list');
+  const today = getSuppToday();
+  const supps = suppList();
+  listEl.innerHTML = supps.map(s=>{
+    const entry = today[s.id] || {};
+    return `<div class="supp-row ${entry.taken ? 'taken' : ''}" data-id="${escapeHtml(s.id)}">
+      <div class="supp-check" title="Taken today">${entry.taken ? '✓' : ''}</div>
+      <div class="supp-main">
+        <div class="supp-name">${escapeHtml(s.name)}${s.optional ? '<span class="opt">optional</span>' : ''}</div>
+        <div class="supp-fields">
+          <label>dose <input class="weight-input supp-dose" data-field="dose" value="${escapeHtml(s.dose)}" placeholder="dose"></label>
+          <label>time <input class="weight-input supp-time" data-field="time" value="${escapeHtml(entry.time || '')}" placeholder="8:00 AM"></label>
+          <label>notes <input class="weight-input supp-notes" data-field="notes" value="${escapeHtml(entry.notes || '')}" placeholder="with breakfast"></label>
+        </div>
+      </div>
+      ${s.custom ? '<button class="supp-del" title="Remove supplement">×</button>' : ''}
+    </div>`;
+  }).join('');
+  updateSuppCount();
+}
+
+function updateSuppCount(){
+  const today = getSuppToday();
+  const supps = suppList();
+  const taken = supps.filter(s=>today[s.id] && today[s.id].taken).length;
+  document.getElementById('supp-count').textContent = `${taken} / ${supps.length} taken`;
+}
+
+function initSupplements(){
+  const listEl = document.getElementById('supp-list');
+  renderSupplements();
+
+  listEl.addEventListener('click', e=>{
+    const row = e.target.closest('.supp-row');
+    if(!row) return;
+    const id = row.dataset.id;
+    if(e.target.closest('.supp-check')){
+      const nowTaken = !row.classList.contains('taken');
+      row.classList.toggle('taken', nowTaken);
+      row.querySelector('.supp-check').textContent = nowTaken ? '✓' : '';
+      saveSuppEntry(id, { taken: nowTaken });
+      updateSuppCount();
+    }
+    if(e.target.closest('.supp-del')){
+      const defs = getSuppDefs();
+      defs.custom = defs.custom.filter(s=>s.id !== id);
+      delete defs.doses[id];
+      saveSuppDefs(defs);
+      renderSupplements();
+    }
+  });
+
+  listEl.addEventListener('input', e=>{
+    const inp = e.target.closest('input[data-field]');
+    if(!inp) return;
+    const id = inp.closest('.supp-row').dataset.id;
+    const field = inp.dataset.field;
+    if(field === 'dose'){
+      const defs = getSuppDefs();
+      defs.doses[id] = inp.value;
+      saveSuppDefs(defs);
+    } else {
+      saveSuppEntry(id, { [field]: inp.value });
+    }
+  });
+
+  document.getElementById('supp-add-btn').addEventListener('click', ()=>{
+    const name = (prompt('Supplement name:') || '').trim();
+    if(!name) return;
+    const defs = getSuppDefs();
+    defs.custom.push({ id: 'custom-' + Date.now(), name });
+    saveSuppDefs(defs);
+    renderSupplements();
+  });
+
+  document.getElementById('supp-reset-btn').addEventListener('click', ()=>{
+    const log = getSuppLog();
+    delete log[localDateStr()];
+    saveSuppLog(log);
+    renderSupplements();
+  });
+}
+
 // --- Data backup ---
 function exportData(){
   const data = {};
@@ -1038,6 +1292,7 @@ function init(){
   renderVolume();
   pruneOldChecks();
   initBodyweight();
+  initSupplements();
   setInterval(tickSessionClock, 1000);
 
   const nav = document.getElementById('day-nav');
