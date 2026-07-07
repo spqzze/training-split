@@ -426,7 +426,7 @@
       <li>Log last session's reps per set — hit the top of the range on every set and the app will flag it as time to add weight.</li>
     </ul>
     <div class="reset-row">
-      <button id="reset-weights-btn">Reset weights</button>
+      <button id="reset-weights-btn">Reset weights &amp; reps</button>
       <button id="reset-btn">Reset checked sets</button>
     </div>
   </div>
@@ -443,10 +443,10 @@ const DATA = {
       { name:"Flat bench", muscle:"chest", sets:2, data:"2×5–8 — {{w}}", weight:"210 lb", rir:"RIR 1–2", rest:"2–3 min", restSec:150, note:"Pre-fatigued from incline — expect ~10–15% lower numbers, that's normal." },
       { name:"Chest-supported row", muscle:"back", sets:2, data:"2×6–8 — {{w}}", weight:"200 lb", rir:"RIR 1–2", rest:"2 min", restSec:120, note:"Cue: pull with elbows, squeeze shoulder blades." },
       { name:"Cable fly", muscle:"chest", sets:2, data:"2×10–15 — {{w}}", weight:"60 lb", rir:"RIR 0–1", rest:"60–90 sec", restSec:75, note:"Pause 1–2 sec at deepest stretch — stretch-mediated hypertrophy." },
-      { name:"Cable lateral raise", muscle:"delts", myo:true, sets:1, data:"Activation 15–20 @ {{w}}, then 3–4 mini-sets of 3–5, 15–20s rest", weight:"40 lb", rir:"RIR 0–1", rest:"—", restSec:20, note:"Myo-reps — burn isn't failure here, push closer to true failure." },
+      { name:"Cable lateral raise", muscle:"delts", myo:true, sets:1, displaySets:4, effectiveSets:3, data:"Activation 15–20 @ {{w}}, then 3–4 mini-sets of 3–5, 15–20s rest", weight:"40 lb", rir:"RIR 0–1", rest:"—", restSec:20, note:"Myo-reps — burn isn't failure here, push closer to true failure." },
       { name:"Overhead tricep extension", muscle:"arms", sets:2, data:"2×8–12 — {{w}}", weight:"65 lb", rir:"RIR 0–2", rest:"60–90 sec", restSec:75, note:"Biases the long head of the triceps." },
       { name:"Barbell curl", muscle:"arms", sets:2, data:"2×8–12 — {{w}}", weight:"70 lb", rir:"RIR 0–2", rest:"60–90 sec", restSec:75 },
-      { name:"Incline DB curl", muscle:"arms", myo:true, sets:1, data:"Activation 10–12 @ {{w}} (~5RIR), then 3–4 mini-sets of 3–5, 15–20s rest", weight:"", rir:"RIR 0–1", rest:"—", restSec:20, note:"Myo-reps." },
+      { name:"Incline DB curl", muscle:"arms", myo:true, sets:1, displaySets:4, effectiveSets:3, data:"Activation 10–12 @ {{w}} (~5RIR), then 3–4 mini-sets of 3–5, 15–20s rest", weight:"", rir:"RIR 0–1", rest:"—", restSec:20, note:"Myo-reps." },
     ]
   },
   tue: {
@@ -481,7 +481,7 @@ const DATA = {
       { name:"Wide-grip lat pulldown", muscle:"back", sets:2, data:"2×8–12 — {{w}}", weight:"175 lb", rir:"RIR 0–2", rest:"90 sec–2 min", restSec:105, note:"Wide grip biases lat width over thickness." },
       { name:"Machine chest fly", muscle:"chest", sets:2, data:"2×10–15 — {{w}}", weight:"170 lb", rir:"RIR 0–1", rest:"60–90 sec", restSec:75, note:"Pause at stretch." },
       { name:"Chest-supported row", muscle:"back", sets:2, data:"2×8–12 — {{w}}", weight:"180 lb", rir:"RIR 0–2", rest:"90 sec–2 min", restSec:105 },
-      { name:"Cable lateral raise", muscle:"delts", myo:true, sets:1, data:"Activation 15–20 @ {{w}}, then 3–4 mini-sets of 3–5, 15–20s rest", weight:"30 lb", rir:"RIR 0–1", rest:"—", restSec:20, note:"Myo-reps." },
+      { name:"Cable lateral raise", muscle:"delts", myo:true, sets:1, displaySets:4, effectiveSets:3, data:"Activation 15–20 @ {{w}}, then 3–4 mini-sets of 3–5, 15–20s rest", weight:"30 lb", rir:"RIR 0–1", rest:"—", restSec:20, note:"Myo-reps." },
       { name:"Rear delt fly", muscle:"delts", sets:3, data:"3×15–20 — {{w}}", weight:"moderate", rir:"RIR 0–1", rest:"60–90 sec", restSec:75 },
       { name:"Hammer curl → overhead tricep extension", muscle:"arms", superset:true, sets:2, data:"{{w}} 8–12 → {{w2}} 8–12, back to back", weight:"40 lb", weight2:"60 lb", rir:"RIR 0–1", rest:"90 sec after both", restSec:90, note:"Antagonist superset — maintains density without pre-fatiguing either muscle." },
       { name:"Hanging leg raise", muscle:"abs", sets:4, data:"4×10–15 — bodyweight", rir:"RIR 1–2", rest:"60–90 sec", restSec:75 },
@@ -506,8 +506,11 @@ const MUSCLE_LABELS = {
   hamstrings:"Hamstrings", quads:"Quads", calves:"Calves", abs:"Abs"
 };
 
-function effSets(ex){
-  return ex.myo ? 4 : ex.sets;
+function volumeSets(ex){
+  return ex.effectiveSets ?? ex.sets;
+}
+function displaySets(ex){
+  return ex.displaySets ?? ex.sets;
 }
 
 function computeVolume(){
@@ -515,7 +518,7 @@ function computeVolume(){
   Object.values(DATA).forEach(day=>{
     if(!day.exercises) return;
     day.exercises.forEach(ex=>{
-      vol[ex.muscle] = (vol[ex.muscle]||0) + effSets(ex);
+      vol[ex.muscle] = (vol[ex.muscle]||0) + volumeSets(ex);
     });
   });
   return vol;
@@ -588,7 +591,7 @@ function progressionBadge(dayKey, idx, setCount, target){
 function exerciseCard(dayKey, ex, idx){
   const cls = ex.myo ? 'myo' : (ex.superset ? 'superset' : '');
   const tag = ex.myo ? 'Myo-reps' : (ex.superset ? 'Superset' : '');
-  const setCount = effSets(ex);
+  const setCount = displaySets(ex);
   const target = ex.myo ? null : parseRepTarget(ex.data);
   const boxes = Array.from({length:setCount}).map((_,i)=>{
     const key = `${dayKey}-${idx}-${i}`;
@@ -647,16 +650,20 @@ function startRestTimer(key, seconds, btn){
     if(remaining <= 0){
       clearInterval(timers[key]);
       delete timers[key];
-      btn.classList.remove('running');
-      btn.classList.add('done');
-      btn.textContent = 'Rest done';
-      setTimeout(()=>{
-        if(btn.isConnected){
-          btn.classList.remove('done');
-          btn.textContent = `Start rest — ${formatMMSS(seconds)}`;
-        }
-      }, 4000);
-    } else {
+      if(btn.isConnected){
+        btn.classList.remove('running');
+        btn.classList.add('done');
+        btn.textContent = 'Rest done';
+        setTimeout(()=>{
+          if(btn.isConnected){
+            btn.classList.remove('done');
+            btn.textContent = `Start rest — ${formatMMSS(seconds)}`;
+          }
+        }, 4000);
+      }
+      return;
+    }
+    if(btn.isConnected){
       btn.textContent = `Resting — ${formatMMSS(remaining)}`;
     }
   }, 1000);
@@ -672,7 +679,7 @@ function refreshProgression(card){
   const idx = parseInt(card.dataset.idx, 10);
   const ex = DATA[dayKey].exercises[idx];
   const target = ex.myo ? null : parseRepTarget(ex.data);
-  const setCount = effSets(ex);
+  const setCount = displaySets(ex);
   const badgeHtml = target ? progressionBadge(dayKey, idx, setCount, target) : '';
   const existing = card.querySelector('.progression');
   if(existing) existing.remove();
