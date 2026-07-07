@@ -61,6 +61,17 @@
     margin-top:10px;
     max-width:480px;
   }
+  .bw-row{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:20px;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .bw-row .section-label{ margin-bottom:0; }
+  .bw-input{ width:70px; }
+  .bw-hint{ font-size:11px; color:var(--text-faint); }
 
   /* Volume chart */
   section.volume{
@@ -200,6 +211,59 @@
     margin-bottom:8px;
   }
 
+  /* Session bar: progress + timer */
+  .session-bar{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:16px;
+    padding:14px 16px;
+    margin-bottom:18px;
+    background:var(--surface);
+    border:1px solid var(--border);
+  }
+  .session-progress{ flex:1; min-width:180px; }
+  .progress-row{
+    display:flex;
+    justify-content:space-between;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--text-dim);
+    margin-bottom:6px;
+  }
+  .progress-track{
+    position:relative;
+    height:8px;
+    background:var(--bg);
+    border:1px solid var(--border);
+  }
+  .progress-fill{
+    position:absolute; top:0; bottom:0; left:0;
+    background:var(--steel-dim);
+    transition:width 0.2s ease;
+  }
+  .session-timer{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .timer-clock{
+    font-family:'JetBrains Mono',monospace;
+    font-size:20px;
+    color:var(--text);
+  }
+  .session-timer button{
+    background:none;
+    border:1px solid var(--border-strong);
+    color:var(--text-dim);
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    padding:5px 10px;
+    cursor:pointer;
+  }
+  .session-timer button:disabled{ opacity:0.4; cursor:default; }
+
   .exercise{
     border:1px solid var(--border);
     background:var(--surface);
@@ -265,6 +329,35 @@
   }
   .ex-note strong{ color:var(--text-dim); }
 
+  /* Last performance + PR */
+  .perf-info{
+    margin:0 16px 12px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .last-perf{
+    color:var(--text-dim);
+    padding:8px 12px;
+    background:var(--surface-2);
+    border-left:2px solid var(--border-strong);
+  }
+  .perf-date{ color:var(--text-faint); }
+  .pr-badge{
+    color:var(--plate);
+    padding:8px 12px;
+    background:var(--surface-2);
+    border-left:2px solid var(--plate);
+    align-self:flex-start;
+  }
+  .pr-badge.flash{ animation:pr-flash 0.6s ease 2; }
+  @keyframes pr-flash{
+    0%,100%{ background:var(--surface-2); }
+    50%{ background:var(--rust-dim); }
+  }
+
   .progression{
     margin:0 16px 12px;
     padding:8px 12px;
@@ -275,6 +368,22 @@
     color:var(--text-dim);
   }
   .progression.down{ border-left-color:var(--rust); }
+  .progression.hold{ border-left-color:var(--plate); }
+
+  /* Personal note */
+  .my-note{ padding:0 16px 12px; }
+  .note-input{
+    width:100%;
+    background:var(--bg);
+    border:1px solid var(--border-strong);
+    color:var(--text);
+    font-family:'JetBrains Mono',monospace;
+    font-size:12.5px;
+    padding:6px 10px;
+    border-radius:2px;
+  }
+  .note-input::placeholder{ color:var(--text-faint); }
+  .note-input:focus{ outline:none; border-color:var(--rust); }
 
   .sets{
     display:flex;
@@ -361,6 +470,7 @@
     margin-top:24px;
     text-align:right;
     display:flex;
+    flex-wrap:wrap;
     justify-content:flex-end;
     gap:10px;
   }
@@ -388,6 +498,11 @@
     <div class="eyebrow">Five-day hypertrophy split</div>
     <h1>Ledger</h1>
     <p>Upper/lower split built around chest-lat priority, strength, and pump days. RIR-anchored, myo-reps on isolation work, stretch-focused technique cues. Tap sets as you go, edit weights as you progress.</p>
+    <div class="bw-row">
+      <span class="section-label">Morning weight</span>
+      <input type="text" id="bw-input" class="weight-input bw-input" placeholder="lb">
+      <span class="bw-hint" id="bw-hint"></span>
+    </div>
   </div>
 </header>
 
@@ -423,9 +538,12 @@
       <li>RIR calibration: take one set to true failure every few weeks to keep your sense of it accurate.</li>
       <li>Track weekly sets per muscle group — stay in the 10–20 range shown above.</li>
       <li>Once weekly weight/rep jumps start to stall, shift toward undulating or block periodization.</li>
-      <li>Log last session's reps per set — hit the top of the range on every set and the app will flag it as time to add weight.</li>
+      <li>Finish every set of an exercise once and it locks in "Last" performance, PRs, and next-session guidance.</li>
     </ul>
     <div class="reset-row">
+      <button id="export-btn">Export data</button>
+      <button id="import-btn">Import data</button>
+      <input type="file" id="import-file" accept="application/json" hidden>
       <button id="reset-weights-btn">Reset weights &amp; reps</button>
       <button id="reset-btn">Reset checked sets</button>
     </div>
@@ -506,6 +624,11 @@ const MUSCLE_LABELS = {
   hamstrings:"Hamstrings", quads:"Quads", calves:"Calves", abs:"Abs"
 };
 
+const DAY_NAMES = {
+  mon:"Monday", tue:"Tuesday", wed:"Wednesday", thu:"Thursday",
+  fri:"Friday", sat:"Saturday", sun:"Sunday"
+};
+
 function volumeSets(ex){
   return ex.effectiveSets ?? ex.sets;
 }
@@ -545,8 +668,24 @@ function renderVolume(){
   }).join('');
 }
 
-function escapeAttr(s){
-  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+function escapeHtml(s){
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function localDateStr(date){
+  const d = date || new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
+function getTodayKey(){
+  return ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
 }
 
 function fillWeights(dayKey, idx, ex){
@@ -554,7 +693,7 @@ function fillWeights(dayKey, idx, ex){
     const key = `${dayKey}-${idx}-${token}`;
     const fallback = token === 'w' ? ex.weight : ex.weight2;
     const val = getWeightValue(key, fallback);
-    return `<input class="weight-input" data-key="${key}" value="${escapeAttr(val)}" placeholder="weight">`;
+    return `<input class="weight-input" data-key="${key}" value="${escapeHtml(val)}" placeholder="weight">`;
   });
 }
 
@@ -570,22 +709,105 @@ function formatMMSS(totalSec){
   return `${m}:${String(s).padStart(2,'0')}`;
 }
 
-function progressionBadge(dayKey, idx, setCount, target){
-  const reps = [];
-  for(let i=0;i<setCount;i++){
-    const raw = getRepValue(`${dayKey}-${idx}-${i}-r`);
-    if(raw === '') continue;
-    const n = parseInt(raw, 10);
-    if(!isNaN(n)) reps.push(n);
+function formatDuration(totalSec){
+  const h = Math.floor(totalSec/3600);
+  const m = Math.floor((totalSec%3600)/60);
+  const s = Math.floor(totalSec%60);
+  if(h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+
+// --- Progression suggestion, based on the last *completed* workout's logged reps ---
+function progressionBadge(dayKey, idx, target){
+  const last = getLastPerf(`${dayKey}-${idx}`);
+  if(!last || !last.reps || !last.reps.length) return '';
+  const reps = last.reps.map(r=>parseInt(r,10)).filter(n=>!isNaN(n));
+  if(!reps.length) return '';
+  const hitTop = reps.filter(r=>r >= target.upper).length;
+  const belowBottom = reps.filter(r=>r < target.lower).length;
+  if(hitTop === reps.length){
+    return `<div class="progression up">▲ Hit the top of the rep range on every set last time — increase weight next session.</div>`;
   }
-  if(reps.length < setCount) return '';
-  if(reps.every(r=>r >= target.upper)){
-    return `<div class="progression up">▲ Hit top reps on every set last time — add weight next session.</div>`;
+  if(belowBottom > reps.length/2){
+    return `<div class="progression down">▼ Missed the bottom of the rep range on most sets — reduce weight slightly or repeat.</div>`;
   }
-  if(reps.every(r=>r < target.lower)){
-    return `<div class="progression down">▼ Missed the rep range last time — hold or ease weight next session.</div>`;
+  return `<div class="progression hold">⚠ Hit the target on some sets last time — keep the same weight.</div>`;
+}
+
+// --- Last session performance + personal records ---
+function perfInfoHtml(dayKey, idx){
+  const key = `${dayKey}-${idx}`;
+  const last = getLastPerf(key);
+  const pr = getPR(key);
+  if(!last && !pr) return '';
+  const parts = [];
+  if(last){
+    const repsStr = last.reps && last.reps.length ? ` × ${last.reps.map(escapeHtml).join(' / ')}` : '';
+    const dayName = DAY_NAMES[last.dayKey] || last.dayKey;
+    parts.push(`<div class="last-perf">Last: ${escapeHtml(last.weight || '—')}${repsStr}<br><span class="perf-date">Last performed: ${dayName}</span></div>`);
   }
-  return '';
+  if(pr){
+    const prRepsStr = pr.reps && pr.reps.length ? ` × ${pr.reps.map(escapeHtml).join(' / ')}` : '';
+    parts.push(`<div class="pr-badge">PR — ${escapeHtml(pr.weight || '—')}${prRepsStr}</div>`);
+  }
+  return `<div class="perf-info">${parts.join('')}</div>`;
+}
+
+function computeInsightsHtml(dayKey, idx, target){
+  const progressionHtml = target ? progressionBadge(dayKey, idx, target) : '';
+  return perfInfoHtml(dayKey, idx) + progressionHtml;
+}
+
+function refreshInsights(card){
+  const dayKey = card.dataset.day;
+  const idx = parseInt(card.dataset.idx, 10);
+  const ex = DATA[dayKey].exercises[idx];
+  const target = ex.myo ? null : parseRepTarget(ex.data);
+  card.querySelectorAll('.perf-info, .progression').forEach(el=>el.remove());
+  const html = computeInsightsHtml(dayKey, idx, target);
+  if(html) card.querySelector('.sets').insertAdjacentHTML('beforebegin', html);
+}
+
+function parseWeightNum(w){
+  if(!w) return null;
+  const m = String(w).match(/(\d+(\.\d+)?)/);
+  return m ? parseFloat(m[1]) : null;
+}
+function perfScore(weight, reps){
+  const w = parseWeightNum(weight);
+  const repSum = reps.reduce((sum,r)=>sum + (Number(r)||0), 0);
+  return w !== null ? (w * 1000 + repSum) : repSum;
+}
+
+function handleExerciseCompletion(card, dayKey, idx, ex){
+  const boxes = [...card.querySelectorAll('.set-box')];
+  if(!boxes.length || !boxes.every(b=>b.classList.contains('done'))) return;
+
+  const key = `${dayKey}-${idx}`;
+  const weightInput = card.querySelector('.weight-input');
+  const weight = weightInput ? weightInput.value.trim() : '';
+  const reps = [...card.querySelectorAll('.reps-input')].map(inp=>inp.value.trim()).filter(v=>v !== '');
+
+  saveLastPerf(key, { weight, reps, date: localDateStr(), dayKey });
+
+  let newPR = false;
+  if(weight || reps.length){
+    const score = perfScore(weight, reps);
+    const existingPR = getPR(key);
+    if(!existingPR || score > existingPR.score){
+      savePR(key, { weight, reps, date: localDateStr(), score });
+      newPR = true;
+    }
+  }
+
+  refreshInsights(card);
+  if(newPR){
+    const badge = card.querySelector('.pr-badge');
+    if(badge){
+      badge.classList.add('flash');
+      setTimeout(()=>{ if(badge.isConnected) badge.classList.remove('flash'); }, 2600);
+    }
+  }
 }
 
 function exerciseCard(dayKey, ex, idx){
@@ -595,13 +817,15 @@ function exerciseCard(dayKey, ex, idx){
   const target = ex.myo ? null : parseRepTarget(ex.data);
   const boxes = Array.from({length:setCount}).map((_,i)=>{
     const key = `${dayKey}-${idx}-${i}`;
-    const repsInput = target ? `<input class="reps-input" data-key="${key}-r" value="${escapeAttr(getRepValue(key+'-r'))}" placeholder="${target.upper}">` : '';
+    const repsInput = target ? `<input class="reps-input" data-key="${key}-r" value="${escapeHtml(getRepValue(key+'-r'))}" placeholder="${target.upper}">` : '';
     return `<div class="set-unit">
       <div class="set-box" data-key="${key}">${i+1}</div>
       ${repsInput}
     </div>`;
   }).join('');
-  const progression = target ? progressionBadge(dayKey, idx, setCount, target) : '';
+  const insights = computeInsightsHtml(dayKey, idx, target);
+  const noteKey = `${dayKey}-${idx}`;
+  const myNote = getMyNote(noteKey);
   const timerKey = `${dayKey}-${idx}`;
   const timer = ex.restSec ? `<div class="rest-timer"><button class="timer-btn" data-key="${timerKey}" data-sec="${ex.restSec}">Start rest — ${formatMMSS(ex.restSec)}</button></div>` : '';
   return `<div class="exercise ${cls}" data-day="${dayKey}" data-idx="${idx}">
@@ -615,9 +839,29 @@ function exerciseCard(dayKey, ex, idx){
       ${ex.rest && ex.rest !== '—' ? `<span>rest ${ex.rest}</span>` : ''}
     </div>
     ${ex.note ? `<div class="ex-note"><strong>Note —</strong> ${ex.note}</div>` : ''}
-    ${progression}
+    ${insights}
+    <div class="my-note"><input class="note-input" data-key="${noteKey}" value="${escapeHtml(myNote)}" placeholder="Add a note… (seat height, cues, how it felt)"></div>
     <div class="sets">${boxes}</div>
     ${timer}
+  </div>`;
+}
+
+function sessionBarHtml(day, key){
+  const totalSets = day.exercises.reduce((sum,ex)=>sum + displaySets(ex), 0);
+  const isToday = key === getTodayKey();
+  return `<div class="session-bar">
+    <div class="session-progress">
+      <div class="section-label">Workout progress</div>
+      <div class="progress-row">
+        <span id="session-progress-text">0 / ${totalSets} sets completed</span>
+        <span id="session-progress-pct">0%</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="session-progress-fill" style="width:0%"></div></div>
+    </div>
+    ${isToday ? `<div class="session-timer">
+      <span class="timer-clock" id="session-clock">0:00</span>
+      <button id="session-pause-btn" disabled>Pause</button>
+    </div>` : ''}
   </div>`;
 }
 
@@ -633,6 +877,7 @@ function renderDay(key){
   const readiness = day.readiness ? `<div class="readiness">${day.readiness}</div>` : '';
   const cards = day.exercises.map((ex,i)=>exerciseCard(key, ex, i)).join('');
   return `<div class="day-head"><h2>${day.title}</h2><div class="day-sub">${day.sub}</div></div>
+    ${sessionBarHtml(day, key)}
     ${readiness}
     ${cards}`;
 }
@@ -674,23 +919,127 @@ function clearAllTimers(){
   Object.keys(timers).forEach(k=>delete timers[k]);
 }
 
-function refreshProgression(card){
-  const dayKey = card.dataset.day;
-  const idx = parseInt(card.dataset.idx, 10);
-  const ex = DATA[dayKey].exercises[idx];
-  const target = ex.myo ? null : parseRepTarget(ex.data);
-  const setCount = displaySets(ex);
-  const badgeHtml = target ? progressionBadge(dayKey, idx, setCount, target) : '';
-  const existing = card.querySelector('.progression');
-  if(existing) existing.remove();
-  if(badgeHtml){
-    card.querySelector('.sets').insertAdjacentHTML('beforebegin', badgeHtml);
+// --- Workout completion progress ---
+function updateSessionProgress(){
+  const fill = document.getElementById('session-progress-fill');
+  if(!fill) return;
+  const container = document.querySelector('.day.active');
+  if(!container) return;
+  const boxes = container.querySelectorAll('.set-box');
+  const total = boxes.length;
+  const done = container.querySelectorAll('.set-box.done').length;
+  const pct = total ? Math.round((done/total)*100) : 0;
+  document.getElementById('session-progress-text').textContent = `${done} / ${total} sets completed`;
+  document.getElementById('session-progress-pct').textContent = `${pct}%`;
+  fill.style.width = `${pct}%`;
+}
+
+// --- Session timer: starts automatically on the first completed set of the day ---
+function computeElapsedSec(sess){
+  if(!sess) return 0;
+  let sec = sess.accumulatedSec || 0;
+  if(!sess.paused && sess.startedAt){
+    sec += Math.floor((Date.now() - sess.startedAt)/1000);
   }
+  return sec;
+}
+
+function ensureSessionStarted(){
+  const today = localDateStr();
+  const sess = getSession();
+  if(sess && sess.date === today) return;
+  saveSession({ date: today, accumulatedSec: 0, startedAt: Date.now(), paused: false });
+}
+
+function toggleSessionPause(){
+  const today = localDateStr();
+  const sess = getSession();
+  if(!sess || sess.date !== today) return;
+  if(sess.paused){
+    sess.paused = false;
+    sess.startedAt = Date.now();
+  } else {
+    sess.accumulatedSec = computeElapsedSec(sess);
+    sess.paused = true;
+    sess.startedAt = null;
+  }
+  saveSession(sess);
+  updateSessionPauseBtn();
+  tickSessionClock();
+}
+
+function updateSessionPauseBtn(){
+  const btn = document.getElementById('session-pause-btn');
+  if(!btn) return;
+  const today = localDateStr();
+  const sess = getSession();
+  const active = !!(sess && sess.date === today);
+  btn.disabled = !active;
+  btn.textContent = active && sess.paused ? 'Resume' : 'Pause';
+}
+
+function tickSessionClock(){
+  const el = document.getElementById('session-clock');
+  if(!el) return;
+  const today = localDateStr();
+  const sess = getSession();
+  el.textContent = formatDuration(sess && sess.date === today ? computeElapsedSec(sess) : 0);
+}
+
+// --- Morning bodyweight log ---
+function initBodyweight(){
+  const input = document.getElementById('bw-input');
+  const hint = document.getElementById('bw-hint');
+  if(!input) return;
+  const today = localDateStr();
+  input.value = getBodyweights()[today] || '';
+  const prev = latestBodyweightEntry(today);
+  hint.textContent = prev ? `last logged: ${prev.value} lb` : '';
+  input.addEventListener('input', ()=>{
+    saveBodyweight(today, input.value.trim());
+  });
+}
+
+// --- Data backup ---
+function exportData(){
+  const data = {};
+  Object.keys(localStorage).forEach(k=>{
+    if(k.startsWith('ledger-')) data[k] = localStorage.getItem(k);
+  });
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ledger-backup-${localDateStr()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function importData(file){
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const data = JSON.parse(reader.result);
+      Object.keys(data).forEach(k=>{
+        if(k.startsWith('ledger-')) localStorage.setItem(k, data[k]);
+      });
+      alert('Data imported. Reloading…');
+      location.reload();
+    } catch(e){
+      alert('Import failed: file is not a valid Ledger backup.');
+    }
+  };
+  reader.readAsText(file);
 }
 
 function init(){
   renderVolume();
   pruneOldChecks();
+  initBodyweight();
+  setInterval(tickSessionClock, 1000);
+
   const nav = document.getElementById('day-nav');
   const content = document.getElementById('day-content');
   const keys = Object.keys(DATA);
@@ -705,17 +1054,31 @@ function init(){
     });
     content.innerHTML = `<div class="day active">${renderDay(key)}</div>`;
     loadChecks();
+    updateSessionProgress();
+    updateSessionPauseBtn();
+    tickSessionClock();
 
     content.querySelectorAll('.set-box').forEach(box=>{
       box.addEventListener('click', ()=>{
+        const card = box.closest('.exercise');
+        const dayKey = card.dataset.day;
+        const idx = parseInt(card.dataset.idx, 10);
+        const ex = DATA[dayKey].exercises[idx];
+
         const wasDone = box.classList.contains('done');
         box.classList.toggle('done');
-        saveCheck(box.dataset.key, box.classList.contains('done'));
-        if(!wasDone && box.classList.contains('done')){
-          const card = box.closest('.exercise');
-          const timerBtn = card ? card.querySelector('.timer-btn') : null;
+        const nowDone = box.classList.contains('done');
+        saveCheck(box.dataset.key, nowDone);
+
+        if(!wasDone && nowDone){
+          ensureSessionStarted();
+          updateSessionPauseBtn();
+          const timerBtn = card.querySelector('.timer-btn');
           if(timerBtn) startRestTimer(timerBtn.dataset.key, parseInt(timerBtn.dataset.sec,10), timerBtn);
         }
+
+        updateSessionProgress();
+        handleExerciseCompletion(card, dayKey, idx, ex);
       });
     });
 
@@ -728,8 +1091,12 @@ function init(){
     content.querySelectorAll('.reps-input').forEach(inp=>{
       inp.addEventListener('input', ()=>{
         saveRep(inp.dataset.key, inp.value);
-        const card = inp.closest('.exercise');
-        if(card) refreshProgression(card);
+      });
+    });
+
+    content.querySelectorAll('.note-input').forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        saveMyNote(inp.dataset.key, inp.value);
       });
     });
 
@@ -738,6 +1105,9 @@ function init(){
         startRestTimer(btn.dataset.key, parseInt(btn.dataset.sec,10), btn);
       });
     });
+
+    const pauseBtn = document.getElementById('session-pause-btn');
+    if(pauseBtn) pauseBtn.addEventListener('click', toggleSessionPause);
   }
 
   nav.addEventListener('click', e=>{
@@ -746,18 +1116,28 @@ function init(){
     showDay(btn.dataset.key);
   });
 
-  const today = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
-  showDay(keys.includes(today) ? today : keys[0]);
+  showDay(keys.includes(getTodayKey()) ? getTodayKey() : keys[0]);
 
   document.getElementById('reset-btn').addEventListener('click', ()=>{
     localStorage.removeItem('ledger-checks');
     document.querySelectorAll('.set-box.done').forEach(b=>b.classList.remove('done'));
+    updateSessionProgress();
   });
 
   document.getElementById('reset-weights-btn').addEventListener('click', ()=>{
     localStorage.removeItem('ledger-weights');
     localStorage.removeItem('ledger-reps');
     showDay(nav.querySelector('button.active').dataset.key);
+  });
+
+  document.getElementById('export-btn').addEventListener('click', exportData);
+  document.getElementById('import-btn').addEventListener('click', ()=>{
+    document.getElementById('import-file').click();
+  });
+  document.getElementById('import-file').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(file) importData(file);
+    e.target.value = '';
   });
 }
 
@@ -823,6 +1203,70 @@ function saveRep(key, val){
 function getRepValue(key){
   const reps = getReps();
   return reps[key] !== undefined ? reps[key] : '';
+}
+
+function getLastPerfs(){
+  try{ return JSON.parse(localStorage.getItem('ledger-lastperf')) || {}; }
+  catch(e){ return {}; }
+}
+function saveLastPerf(key, rec){
+  const all = getLastPerfs();
+  all[key] = rec;
+  localStorage.setItem('ledger-lastperf', JSON.stringify(all));
+}
+function getLastPerf(key){
+  return getLastPerfs()[key] || null;
+}
+
+function getPRs(){
+  try{ return JSON.parse(localStorage.getItem('ledger-pr')) || {}; }
+  catch(e){ return {}; }
+}
+function savePR(key, rec){
+  const all = getPRs();
+  all[key] = rec;
+  localStorage.setItem('ledger-pr', JSON.stringify(all));
+}
+function getPR(key){
+  return getPRs()[key] || null;
+}
+
+function getMyNotes(){
+  try{ return JSON.parse(localStorage.getItem('ledger-mynotes')) || {}; }
+  catch(e){ return {}; }
+}
+function saveMyNote(key, val){
+  const all = getMyNotes();
+  all[key] = val;
+  localStorage.setItem('ledger-mynotes', JSON.stringify(all));
+}
+function getMyNote(key){
+  return getMyNotes()[key] || '';
+}
+
+function getBodyweights(){
+  try{ return JSON.parse(localStorage.getItem('ledger-bodyweight')) || {}; }
+  catch(e){ return {}; }
+}
+function saveBodyweight(dateStr, val){
+  const all = getBodyweights();
+  if(val === ''){ delete all[dateStr]; } else { all[dateStr] = val; }
+  localStorage.setItem('ledger-bodyweight', JSON.stringify(all));
+}
+function latestBodyweightEntry(beforeDate){
+  const all = getBodyweights();
+  const dates = Object.keys(all).filter(d=>d < beforeDate).sort();
+  if(!dates.length) return null;
+  const d = dates[dates.length-1];
+  return { date: d, value: all[d] };
+}
+
+function getSession(){
+  try{ return JSON.parse(localStorage.getItem('ledger-session')) || null; }
+  catch(e){ return null; }
+}
+function saveSession(sess){
+  localStorage.setItem('ledger-session', JSON.stringify(sess));
 }
 
 init();
