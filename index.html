@@ -234,6 +234,7 @@
   .ex-data{
     display:flex;
     flex-wrap:wrap;
+    align-items:center;
     gap:8px 18px;
     padding:0 16px 12px;
     font-family:'JetBrains Mono',monospace;
@@ -241,6 +242,19 @@
     color:var(--text-dim);
   }
   .ex-data b{ color:var(--text); font-weight:500; }
+  .weight-input{
+    width:66px;
+    background:var(--bg);
+    border:1px solid var(--border-strong);
+    color:var(--text);
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    font-weight:500;
+    padding:2px 6px;
+    border-radius:2px;
+  }
+  .weight-input::placeholder{ color:var(--text-faint); font-weight:400; }
+  .weight-input:focus{ outline:none; border-color:var(--rust); }
   .ex-note{
     padding:0 16px 14px;
     font-size:12.5px;
@@ -301,6 +315,9 @@
   .reset-row{
     margin-top:24px;
     text-align:right;
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
   }
   .reset-row button{
     background:none;
@@ -323,9 +340,9 @@
 
 <header class="hero">
   <div class="wrap">
-    <div class="eyebrow">Six-day hypertrophy split</div>
+    <div class="eyebrow">Five-day hypertrophy split</div>
     <h1>Ledger</h1>
-    <p>Upper/lower split built around chest-lat priority, strength, and pump days. RIR-anchored, myo-reps on isolation work, stretch-focused technique cues. Tap sets as you go.</p>
+    <p>Upper/lower split built around chest-lat priority, strength, and pump days. RIR-anchored, myo-reps on isolation work, stretch-focused technique cues. Tap sets as you go, edit weights as you progress.</p>
   </div>
 </header>
 
@@ -362,7 +379,10 @@
       <li>Track weekly sets per muscle group — stay in the 10–20 range shown above.</li>
       <li>Once weekly weight/rep jumps start to stall, shift toward undulating or block periodization.</li>
     </ul>
-    <div class="reset-row"><button id="reset-btn">Reset checked sets</button></div>
+    <div class="reset-row">
+      <button id="reset-weights-btn">Reset weights</button>
+      <button id="reset-btn">Reset checked sets</button>
+    </div>
   </div>
 </footer>
 
@@ -372,52 +392,52 @@ const DATA = {
     label: "Mon", title: "Upper 1", sub: "Chest / lat priority",
     readiness: "If your first warm-up set feels notably heavier than usual, drop working weight 5–10% today.",
     exercises: [
-      { name:"Incline bench", muscle:"chest", sets:3, data:"2×4–6 — 235 lb  ·  1×8–10 — 205 lb", rir:"RIR 1–2", rest:"2–3 min", note:"Priority lift, done fresh — natural tempo, no slowed eccentric." },
-      { name:"Close-grip lat pulldown", muscle:"back", sets:2, data:"2×6–8 — 187 lb", rir:"RIR 1–2", rest:"2 min", note:"Cue: pull with elbows, not hands." },
-      { name:"Flat bench", muscle:"chest", sets:2, data:"2×5–8 — 210 lb", rir:"RIR 1–2", rest:"2–3 min", note:"Pre-fatigued from incline — expect ~10–15% lower numbers, that's normal." },
-      { name:"Chest-supported row", muscle:"back", sets:2, data:"2×6–8 — 200 lb", rir:"RIR 1–2", rest:"2 min", note:"Cue: pull with elbows, squeeze shoulder blades." },
-      { name:"Cable fly", muscle:"chest", sets:2, data:"2×10–15 — 60 lb", rir:"RIR 0–1", rest:"60–90 sec", note:"Pause 1–2 sec at deepest stretch — stretch-mediated hypertrophy." },
-      { name:"Cable lateral raise", muscle:"delts", myo:true, sets:1, data:"Activation 15–20 @ 40 lb, then 3–4 mini-sets of 3–5, 15–20s rest", rir:"RIR 0–1", rest:"—", note:"Myo-reps — burn isn't failure here, push closer to true failure." },
-      { name:"Overhead tricep extension", muscle:"arms", sets:2, data:"2×8–12 — 65 lb", rir:"RIR 0–2", rest:"60–90 sec", note:"Biases the long head of the triceps." },
-      { name:"Barbell curl", muscle:"arms", sets:2, data:"2×8–12 — 70 lb", rir:"RIR 0–2", rest:"60–90 sec" },
-      { name:"Incline DB curl", muscle:"arms", myo:true, sets:1, data:"Activation 10–12 @ ~5RIR, then 3–4 mini-sets of 3–5, 15–20s rest", rir:"RIR 0–1", rest:"—", note:"Myo-reps." },
+      { name:"Incline bench", muscle:"chest", sets:3, data:"2×4–6 — {{w}}  ·  1×8–10 — {{w2}}", weight:"235 lb", weight2:"205 lb", rir:"RIR 1–2", rest:"2–3 min", note:"Priority lift, done fresh — natural tempo, no slowed eccentric." },
+      { name:"Close-grip lat pulldown", muscle:"back", sets:2, data:"2×6–8 — {{w}}", weight:"187 lb", rir:"RIR 1–2", rest:"2 min", note:"Cue: pull with elbows, not hands." },
+      { name:"Flat bench", muscle:"chest", sets:2, data:"2×5–8 — {{w}}", weight:"210 lb", rir:"RIR 1–2", rest:"2–3 min", note:"Pre-fatigued from incline — expect ~10–15% lower numbers, that's normal." },
+      { name:"Chest-supported row", muscle:"back", sets:2, data:"2×6–8 — {{w}}", weight:"200 lb", rir:"RIR 1–2", rest:"2 min", note:"Cue: pull with elbows, squeeze shoulder blades." },
+      { name:"Cable fly", muscle:"chest", sets:2, data:"2×10–15 — {{w}}", weight:"60 lb", rir:"RIR 0–1", rest:"60–90 sec", note:"Pause 1–2 sec at deepest stretch — stretch-mediated hypertrophy." },
+      { name:"Cable lateral raise", muscle:"delts", myo:true, sets:1, data:"Activation 15–20 @ {{w}}, then 3–4 mini-sets of 3–5, 15–20s rest", weight:"40 lb", rir:"RIR 0–1", rest:"—", note:"Myo-reps — burn isn't failure here, push closer to true failure." },
+      { name:"Overhead tricep extension", muscle:"arms", sets:2, data:"2×8–12 — {{w}}", weight:"65 lb", rir:"RIR 0–2", rest:"60–90 sec", note:"Biases the long head of the triceps." },
+      { name:"Barbell curl", muscle:"arms", sets:2, data:"2×8–12 — {{w}}", weight:"70 lb", rir:"RIR 0–2", rest:"60–90 sec" },
+      { name:"Incline DB curl", muscle:"arms", myo:true, sets:1, data:"Activation 10–12 @ {{w}} (~5RIR), then 3–4 mini-sets of 3–5, 15–20s rest", weight:"", rir:"RIR 0–1", rest:"—", note:"Myo-reps." },
     ]
   },
   tue: {
     label: "Tue", title: "Lower 1", sub: "Hamstring dominant",
     exercises: [
-      { name:"Seated leg curl", muscle:"hamstrings", sets:3, data:"3×8–12 — 120 lb", rir:"RIR 0–2", rest:"90–120 sec", note:"Full stretch, hard squeeze at the top." },
-      { name:"Romanian deadlift (Landmine RDL machine)", muscle:"hamstrings", sets:3, data:"3×6–10 — 180 lb", rir:"RIR 1–2", rest:"2–3 min", note:"2–3 sec eccentric. Push hips back until you feel a deep hamstring stretch." },
-      { name:"Lying leg curl", muscle:"hamstrings", sets:2, data:"2×10–15 — 90 lb", rir:"RIR 0–1", rest:"90 sec", note:"Pause at full stretch before curling." },
+      { name:"Seated leg curl", muscle:"hamstrings", sets:3, data:"3×8–12 — {{w}}", weight:"120 lb", rir:"RIR 0–2", rest:"90–120 sec", note:"Full stretch, hard squeeze at the top." },
+      { name:"Romanian deadlift (Landmine RDL machine)", muscle:"hamstrings", sets:3, data:"3×6–10 — {{w}}", weight:"180 lb", rir:"RIR 1–2", rest:"2–3 min", note:"2–3 sec eccentric. Push hips back until you feel a deep hamstring stretch." },
+      { name:"Lying leg curl", muscle:"hamstrings", sets:2, data:"2×10–15 — {{w}}", weight:"90 lb", rir:"RIR 0–1", rest:"90 sec", note:"Pause at full stretch before curling." },
       { name:"Nordic curl (or machine)", muscle:"hamstrings", sets:2, data:"2×6–10 — bodyweight/assisted", rir:"RIR 1–2", rest:"2 min", note:"Strong eccentric bias — high mechanical damage stimulus." },
-      { name:"Standing calf raise", muscle:"calves", sets:4, data:"4×8–12", rir:"RIR 0–1", rest:"60–90 sec", note:"Slow stretch at the bottom, pause at the top." },
+      { name:"Standing calf raise", muscle:"calves", sets:4, data:"4×8–12 — {{w}}", weight:"", rir:"RIR 0–1", rest:"60–90 sec", note:"Slow stretch at the bottom, pause at the top." },
     ]
   },
   wed: {
     label: "Wed", title: "Upper 2", sub: "Strength",
     readiness: "If your first warm-up set feels notably heavier than usual, drop working weight 5–10% today.",
     exercises: [
-      { name:"Bench press", muscle:"chest", sets:3, data:"3×4–6 — 235 lb", rir:"RIR 1–2", rest:"3 min", note:"Natural tempo — this is your strength-expression day. Warm up 2–3 ramp-up sets." },
-      { name:"Incline DB press", muscle:"chest", sets:2, data:"2×6–10 — 130 lb", rir:"RIR 1–2", rest:"2 min", note:"2–3 sec eccentric for extra time under tension." },
-      { name:"Single-arm lat pulldown", muscle:"back", sets:2, data:"2×8–12 — 125 lb", rir:"RIR 0–2", rest:"90 sec", note:"Unilateral — focus mind-muscle connection per side." },
-      { name:"Straight-arm pulldown", muscle:"back", sets:2, data:"2×10–15 — 100 lb", rir:"RIR 0–1", rest:"60–90 sec", note:"Keep elbows nearly locked — minimal bicep involvement by design." },
-      { name:"Shoulder press", muscle:"delts", sets:2, data:"2×6–10 — 125 lb", rir:"RIR 1–2", rest:"2 min" },
-      { name:"Rear delt fly", muscle:"delts", sets:3, data:"3×12–20 — 110 lb", rir:"RIR 0–1", rest:"60–90 sec" },
-      { name:"Pushdowns", muscle:"arms", sets:2, data:"2×10–15 — 50 lb", rir:"RIR 0–1", rest:"60–90 sec", note:"Biases lateral/medial tricep heads." },
-      { name:"Hammer curl", muscle:"arms", sets:2, data:"2×8–12 — moderate", rir:"RIR 0–2", rest:"60–90 sec" },
+      { name:"Bench press", muscle:"chest", sets:3, data:"3×4–6 — {{w}}", weight:"235 lb", rir:"RIR 1–2", rest:"3 min", note:"Natural tempo — this is your strength-expression day. Warm up 2–3 ramp-up sets." },
+      { name:"Incline DB press", muscle:"chest", sets:2, data:"2×6–10 — {{w}}", weight:"130 lb", rir:"RIR 1–2", rest:"2 min", note:"2–3 sec eccentric for extra time under tension." },
+      { name:"Single-arm lat pulldown", muscle:"back", sets:2, data:"2×8–12 — {{w}}", weight:"125 lb", rir:"RIR 0–2", rest:"90 sec", note:"Unilateral — focus mind-muscle connection per side." },
+      { name:"Straight-arm pulldown", muscle:"back", sets:2, data:"2×10–15 — {{w}}", weight:"100 lb", rir:"RIR 0–1", rest:"60–90 sec", note:"Keep elbows nearly locked — minimal bicep involvement by design." },
+      { name:"Shoulder press", muscle:"delts", sets:2, data:"2×6–10 — {{w}}", weight:"125 lb", rir:"RIR 1–2", rest:"2 min" },
+      { name:"Rear delt fly", muscle:"delts", sets:3, data:"3×12–20 — {{w}}", weight:"110 lb", rir:"RIR 0–1", rest:"60–90 sec" },
+      { name:"Pushdowns", muscle:"arms", sets:2, data:"2×10–15 — {{w}}", weight:"50 lb", rir:"RIR 0–1", rest:"60–90 sec", note:"Biases lateral/medial tricep heads." },
+      { name:"Hammer curl", muscle:"arms", sets:2, data:"2×8–12 — {{w}}", weight:"moderate", rir:"RIR 0–2", rest:"60–90 sec" },
     ]
   },
   thu: { label:"Thu", title:"Rest", sub:"Full recovery", rest:true },
   fri: {
     label: "Fri", title: "Upper 3", sub: "Pump / low fatigue",
     exercises: [
-      { name:"Weighted chest dips", muscle:"chest", sets:2, data:"2×6–10 — 20 lb", rir:"RIR 1–2", rest:"2 min" },
-      { name:"Wide-grip lat pulldown", muscle:"back", sets:2, data:"2×8–12 — 175 lb", rir:"RIR 0–2", rest:"90 sec–2 min", note:"Wide grip biases lat width over thickness." },
-      { name:"Machine chest fly", muscle:"chest", sets:2, data:"2×10–15 — 170 lb", rir:"RIR 0–1", rest:"60–90 sec", note:"Pause at stretch." },
-      { name:"Chest-supported row", muscle:"back", sets:2, data:"2×8–12 — 180 lb", rir:"RIR 0–2", rest:"90 sec–2 min" },
-      { name:"Cable lateral raise", muscle:"delts", myo:true, sets:1, data:"Activation 15–20 @ 30 lb, then 3–4 mini-sets of 3–5, 15–20s rest", rir:"RIR 0–1", rest:"—", note:"Myo-reps." },
-      { name:"Rear delt fly", muscle:"delts", sets:3, data:"3×15–20 — moderate", rir:"RIR 0–1", rest:"60–90 sec" },
-      { name:"Hammer curl → overhead tricep extension", muscle:"arms", superset:true, sets:2, data:"40 lb 8–12 → 60 lb 8–12, back to back", rir:"RIR 0–1", rest:"90 sec after both", note:"Antagonist superset — maintains density without pre-fatiguing either muscle." },
+      { name:"Weighted chest dips", muscle:"chest", sets:2, data:"2×6–10 — {{w}}", weight:"20 lb", rir:"RIR 1–2", rest:"2 min" },
+      { name:"Wide-grip lat pulldown", muscle:"back", sets:2, data:"2×8–12 — {{w}}", weight:"175 lb", rir:"RIR 0–2", rest:"90 sec–2 min", note:"Wide grip biases lat width over thickness." },
+      { name:"Machine chest fly", muscle:"chest", sets:2, data:"2×10–15 — {{w}}", weight:"170 lb", rir:"RIR 0–1", rest:"60–90 sec", note:"Pause at stretch." },
+      { name:"Chest-supported row", muscle:"back", sets:2, data:"2×8–12 — {{w}}", weight:"180 lb", rir:"RIR 0–2", rest:"90 sec–2 min" },
+      { name:"Cable lateral raise", muscle:"delts", myo:true, sets:1, data:"Activation 15–20 @ {{w}}, then 3–4 mini-sets of 3–5, 15–20s rest", weight:"30 lb", rir:"RIR 0–1", rest:"—", note:"Myo-reps." },
+      { name:"Rear delt fly", muscle:"delts", sets:3, data:"3×15–20 — {{w}}", weight:"moderate", rir:"RIR 0–1", rest:"60–90 sec" },
+      { name:"Hammer curl → overhead tricep extension", muscle:"arms", superset:true, sets:2, data:"{{w}} 8–12 → {{w2}} 8–12, back to back", weight:"40 lb", weight2:"60 lb", rir:"RIR 0–1", rest:"90 sec after both", note:"Antagonist superset — maintains density without pre-fatiguing either muscle." },
       { name:"Hanging leg raise", muscle:"abs", sets:4, data:"4×10–15 — bodyweight", rir:"RIR 1–2", rest:"60–90 sec" },
     ]
   },
@@ -425,11 +445,11 @@ const DATA = {
     label: "Sat", title: "Lower 2", sub: "Quad dominant",
     readiness: "If your first warm-up set feels notably heavier than usual, drop working weight 5–10% today.",
     exercises: [
-      { name:"Hack squat", muscle:"quads", sets:4, data:"4×6–10", rir:"RIR 1–2", rest:"2–3 min", note:"Warm up 1–2 ramp-up sets." },
-      { name:"Leg press (quad bias)", muscle:"quads", sets:3, data:"3×10–15", rir:"RIR 0–1", rest:"90–120 sec", note:"Feet low on the platform, shoulder-width stance." },
-      { name:"Leg extension", muscle:"quads", sets:3, data:"3×12–20 — 120 lb", rir:"RIR 0–1", rest:"60–90 sec", note:"2–3 sec eccentric, pause at the top. Last set can include controlled partials after full-range failure." },
-      { name:"Cable crunch", muscle:"abs", sets:4, data:"4×12–15 — moderate", rir:"RIR 1–2", rest:"60 sec" },
-      { name:"Seated calves", muscle:"calves", sets:4, data:"4×12–20", rir:"RIR 0–1", rest:"60–90 sec", note:"Full stretch, pause at the top — biases soleus vs. standing calf's gastrocnemius bias." },
+      { name:"Hack squat", muscle:"quads", sets:4, data:"4×6–10 — {{w}}", weight:"", rir:"RIR 1–2", rest:"2–3 min", note:"Warm up 1–2 ramp-up sets." },
+      { name:"Leg press (quad bias)", muscle:"quads", sets:3, data:"3×10–15 — {{w}}", weight:"", rir:"RIR 0–1", rest:"90–120 sec", note:"Feet low on the platform, shoulder-width stance." },
+      { name:"Leg extension", muscle:"quads", sets:3, data:"3×12–20 — {{w}}", weight:"120 lb", rir:"RIR 0–1", rest:"60–90 sec", note:"2–3 sec eccentric, pause at the top. Last set can include controlled partials after full-range failure." },
+      { name:"Cable crunch", muscle:"abs", sets:4, data:"4×12–15 — {{w}}", weight:"moderate", rir:"RIR 1–2", rest:"60 sec" },
+      { name:"Seated calves", muscle:"calves", sets:4, data:"4×12–20 — {{w}}", weight:"", rir:"RIR 0–1", rest:"60–90 sec", note:"Full stretch, pause at the top — biases soleus vs. standing calf's gastrocnemius bias." },
     ]
   }
 };
@@ -471,6 +491,19 @@ function renderVolume(){
   }).join('');
 }
 
+function escapeAttr(s){
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+}
+
+function fillWeights(dayKey, idx, ex){
+  return ex.data.replace(/\{\{(w2?)\}\}/g, (_, token)=>{
+    const key = `${dayKey}-${idx}-${token}`;
+    const fallback = token === 'w' ? ex.weight : ex.weight2;
+    const val = getWeightValue(key, fallback);
+    return `<input class="weight-input" data-key="${key}" value="${escapeAttr(val)}" placeholder="weight">`;
+  });
+}
+
 function exerciseCard(dayKey, ex, idx){
   const cls = ex.myo ? 'myo' : (ex.superset ? 'superset' : '');
   const tag = ex.myo ? 'Myo-reps' : (ex.superset ? 'Superset' : '');
@@ -485,7 +518,7 @@ function exerciseCard(dayKey, ex, idx){
       ${tag ? `<div class="ex-tag">${tag}</div>` : ''}
     </div>
     <div class="ex-data">
-      <span><b>${ex.data}</b></span>
+      <span><b>${fillWeights(dayKey, idx, ex)}</b></span>
       <span>${ex.rir}</span>
       ${ex.rest && ex.rest !== '—' ? `<span>rest ${ex.rest}</span>` : ''}
     </div>
@@ -531,6 +564,12 @@ function init(){
         saveCheck(box.dataset.key, box.classList.contains('done'));
       });
     });
+    content.querySelectorAll('.weight-input').forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        saveWeight(inp.dataset.key, inp.value);
+      });
+      inp.addEventListener('click', e=>e.stopPropagation());
+    });
   }
 
   nav.addEventListener('click', e=>{
@@ -545,6 +584,11 @@ function init(){
   document.getElementById('reset-btn').addEventListener('click', ()=>{
     localStorage.removeItem('ledger-checks');
     document.querySelectorAll('.set-box.done').forEach(b=>b.classList.remove('done'));
+  });
+
+  document.getElementById('reset-weights-btn').addEventListener('click', ()=>{
+    localStorage.removeItem('ledger-weights');
+    showDay(nav.querySelector('button.active').dataset.key);
   });
 }
 
@@ -562,6 +606,20 @@ function loadChecks(){
   document.querySelectorAll('.set-box').forEach(box=>{
     if(checks[box.dataset.key]) box.classList.add('done');
   });
+}
+
+function getWeights(){
+  try{ return JSON.parse(localStorage.getItem('ledger-weights')) || {}; }
+  catch(e){ return {}; }
+}
+function saveWeight(key, val){
+  const weights = getWeights();
+  weights[key] = val;
+  localStorage.setItem('ledger-weights', JSON.stringify(weights));
+}
+function getWeightValue(key, fallback){
+  const weights = getWeights();
+  return weights[key] !== undefined ? weights[key] : (fallback || '');
 }
 
 init();
