@@ -536,6 +536,43 @@ input,select,textarea{ font-family:inherit; }
 @keyframes rot{ to{ transform:rotate(360deg); } }
 .spin{ animation:rot 1s linear infinite; }
 
+/* ---------- product recommendations ---------- */
+.roi-strip{
+  display:flex; gap:6px; align-items:center; margin:-6px 0 16px; flex-wrap:wrap;
+}
+.product-card{ display:flex; flex-direction:column; gap:10px; }
+.product-card .pc-top{ display:flex; align-items:flex-start; gap:10px; }
+.product-card .pc-ic{
+  width:38px; height:38px; border-radius:10px; flex:none; display:grid; place-items:center;
+  background:var(--accent-soft); color:var(--accent);
+}
+.product-card h4{ font-family:var(--font-display); font-size:14px; font-weight:600; line-height:1.3; }
+.product-card .pc-cat{ font-size:11px; color:var(--faint); text-transform:uppercase; letter-spacing:0.06em; margin-top:2px; }
+.product-card .pc-badges{ margin-left:auto; display:flex; flex-direction:column; gap:5px; align-items:flex-end; flex:none; }
+.tier-badge, .risk-badge{
+  font-size:10.5px; font-family:var(--font-mono); padding:2px 8px; border-radius:6px; white-space:nowrap;
+}
+.tier-badge{ background:var(--surface-2); color:var(--dim); border:1px solid var(--border); }
+.risk-badge.risk-low{ background:rgba(12,163,12,0.12); color:#6fd66f; }
+.risk-badge.risk-medium{ background:rgba(250,178,25,0.1); color:#ffd479; }
+.product-card .pc-purpose{ font-size:12.5px; color:var(--dim); }
+.product-card .pc-why{
+  font-size:12px; color:var(--text); background:var(--surface-2); border:1px solid var(--border);
+  border-radius:9px; padding:9px 11px; display:flex; gap:7px; align-items:flex-start; line-height:1.45;
+}
+.product-card .pc-why .ic{ color:var(--accent); margin-top:1px; flex:none; }
+.product-card .pc-foot{ display:flex; align-items:center; gap:9px; margin-top:2px; }
+.product-card .pc-foot .btn{ flex:1; font-size:12.5px; }
+.product-group-title{
+  font-family:var(--font-display); font-size:14.5px; font-weight:600; display:flex; align-items:center; gap:8px;
+  margin:26px 0 12px;
+}
+.product-group-title .ic{ color:var(--accent); }
+.product-group-title .count{
+  font-family:var(--font-mono); font-size:10.5px; color:var(--faint); background:var(--surface-2);
+  padding:2px 8px; border-radius:999px; font-weight:400;
+}
+
 /* ---------- footer ---------- */
 footer{
   border-top:1px solid var(--border); margin-top:50px; padding:30px 0 44px;
@@ -604,6 +641,8 @@ footer b{ color:var(--dim); }
     <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 2.5S7 8 7 13a5 5 0 0 0 10 0c0-2-1-4-2-5.5 0 1.5-.8 2.5-2 3-.3-3-1.7-6-1-8Z"/></symbol>
     <symbol id="i-nose" viewBox="0 0 24 24"><path d="M12 4v8.5c0 2 1.5 2.5 2.5 3.5a2.6 2.6 0 0 1-2.5 4.5c-1.5-.4-3-.4-4.5 0"/></symbol>
     <symbol id="i-lips" viewBox="0 0 24 24"><path d="M2.5 13c3-1 4.5-4 7-4 1 0 1.7.7 2.5.7s1.5-.7 2.5-.7c2.5 0 4 3 7 4-2.5 3.5-6 5.5-9.5 5.5S5 16.5 2.5 13Z"/></symbol>
+    <symbol id="i-bag" viewBox="0 0 24 24"><path d="M6 8h12l1 12.5a1 1 0 0 1-1 1.5H6a1 1 0 0 1-1-1.5L6 8Z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.8-4.8"/></symbol>
   </defs>
 </svg>
 
@@ -671,6 +710,7 @@ footer b{ color:var(--dim); }
       <button class="tab" data-tab="skin"><svg class="ic"><use href="#i-spark"/></svg> Skin &amp; Grooming</button>
       <button class="tab" data-tab="photo"><svg class="ic"><use href="#i-camera"/></svg> Photo Quality</button>
       <button class="tab" data-tab="plan"><svg class="ic"><use href="#i-target"/></svg> Action Plan</button>
+      <button class="tab" data-tab="products"><svg class="ic"><use href="#i-bag"/></svg> Products</button>
       <button class="tab" data-tab="progress"><svg class="ic"><use href="#i-trend"/></svg> Progress</button>
     </div>
 
@@ -679,6 +719,7 @@ footer b{ color:var(--dim); }
     <div id="panelSkin" class="panel" hidden></div>
     <div id="panelPhoto" class="panel" hidden></div>
     <div id="panelPlan" class="panel" hidden></div>
+    <div id="panelProducts" class="panel" hidden></div>
     <div id="panelProgress" class="panel" hidden></div>
   </section>
 </main>
@@ -1287,6 +1328,156 @@ const GOAL_HINTS = {
   balanced:'Scoring stays neutral on the masculine↔feminine axis and weights pure harmony.',
   feminine:'Scoring and recommendations will weight softness, eye area and lip balance cues.',
 };
+
+/**
+ * Product database — local, no affiliate links (searchQuery is used to build
+ * a Google-search button instead). Every entry is a basic, widely available,
+ * non-prescription consumer product or tool. Nothing here is medical.
+ *
+ * group        — section the product renders under on the Products tab
+ * category     — short label shown on the card
+ * linkedScores — report category ids that can trigger this product
+ * priority     — 'high' | 'medium' | 'low' — basic/safe items rank higher
+ * priceTier    — '$' | '$$' | '$$$'
+ * risk         — 'low' | 'medium' — cosmetic tools/cleansers are low; actives are medium
+ */
+const PRODUCT_DB = [
+  // --- skincare: baseline ---
+  { id:'cerave-cleanser', name:'CeraVe Hydrating Facial Cleanser', group:'skincare', category:'Cleanser',
+    purpose:'Gentle, ceramide-based cleanser for a daily skincare baseline.', linkedScores:['skin'],
+    priority:'high', priceTier:'$', risk:'low', searchQuery:'CeraVe Hydrating Facial Cleanser',
+    disclaimer:'General skincare product, not medical treatment.' },
+  { id:'cerave-moisturizer', name:'CeraVe Daily Moisturizing Lotion', group:'skincare', category:'Moisturizer',
+    purpose:'Lightweight, fragrance-free moisturizer to pair with any cleanser.', linkedScores:['skin'],
+    priority:'high', priceTier:'$', risk:'low', searchQuery:'CeraVe Daily Moisturizing Lotion',
+    disclaimer:'General skincare product, not medical treatment.' },
+  { id:'la-roche-spf', name:'La Roche-Posay Anthelios Melt-in Milk SPF 60', group:'skincare', category:'Sunscreen',
+    purpose:'Daily broad-spectrum SPF — the single highest-ROI skin habit for long-term tone and texture.', linkedScores:['skin'],
+    priority:'high', priceTier:'$$', risk:'low', searchQuery:'La Roche-Posay Anthelios Melt-in Milk SPF 60',
+    disclaimer:'General skincare product, not medical treatment.' },
+  { id:'cetaphil-gel-cleanser', name:'Cetaphil Gentle Skin Cleanser (Oily/Combo)', group:'skincare', category:'Cleanser',
+    purpose:'Foaming gel cleanser suited to oilier skin than a cream cleanser.', linkedScores:['skin'],
+    priority:'medium', priceTier:'$', risk:'low', searchQuery:'Cetaphil Gentle Skin Cleanser',
+    disclaimer:'General skincare product, not medical treatment.' },
+  { id:'neutrogena-hydro-boost', name:'Neutrogena Hydro Boost Water Gel', group:'skincare', category:'Moisturizer',
+    purpose:'Oil-free hyaluronic-acid gel moisturizer for dry or dehydrated-feeling skin.', linkedScores:['skin'],
+    priority:'medium', priceTier:'$', risk:'low', searchQuery:'Neutrogena Hydro Boost Water Gel',
+    disclaimer:'General skincare product, not medical treatment.' },
+  // --- skincare: texture/acne support (optional, patch-test) ---
+  { id:'differin-adapalene', name:'Differin Adapalene Gel 0.1%', group:'skincare', category:'Texture support',
+    purpose:'Over-the-counter retinoid for texture and breakout-prone skin. Start 2–3×/week, always with SPF.', linkedScores:['skin'],
+    priority:'low', priceTier:'$$', risk:'medium', searchQuery:'Differin Adapalene Gel 0.1%',
+    disclaimer:'Optional. Patch-test first, introduce gradually, and pair with daily SPF. Not medical treatment or a prescription substitute.' },
+  { id:'panoxyl-bp', name:'PanOxyl Benzoyl Peroxide 4% Wash', group:'skincare', category:'Texture support',
+    purpose:'Over-the-counter benzoyl peroxide wash for active breakouts.', linkedScores:['skin'],
+    priority:'low', priceTier:'$', risk:'medium', searchQuery:'PanOxyl Benzoyl Peroxide 4% Foaming Wash',
+    disclaimer:'Optional. Patch-test first — can bleach fabric and cause dryness/irritation. Not medical treatment.' },
+  { id:'paulas-choice-bha', name:"Paula's Choice 2% BHA Liquid Exfoliant", group:'skincare', category:'Texture support',
+    purpose:'Salicylic-acid leave-on exfoliant for texture and clogged pores.', linkedScores:['skin'],
+    priority:'low', priceTier:'$$', risk:'medium', searchQuery:"Paula's Choice 2% BHA Liquid Exfoliant",
+    disclaimer:'Optional. Patch-test first and introduce one new active at a time. Not medical treatment.' },
+  // --- lips ---
+  { id:'aquaphor-lip', name:'Aquaphor Lip Repair', group:'skincare', category:'Lip care',
+    purpose:'Occlusive lip balm for chronically dry or thin-reading lips.', linkedScores:['lips'],
+    priority:'high', priceTier:'$', risk:'low', searchQuery:'Aquaphor Lip Repair Balm',
+    disclaimer:'General skincare product, not medical treatment.' },
+  { id:'laneige-lip-mask', name:'Laneige Lip Sleeping Mask', group:'skincare', category:'Lip care',
+    purpose:'Overnight lip mask for hydration and visible lip volume from moisture, not filler.', linkedScores:['lips'],
+    priority:'medium', priceTier:'$$', risk:'low', searchQuery:'Laneige Lip Sleeping Mask',
+    disclaimer:'General skincare product, not medical treatment.' },
+  // --- eyes ---
+  { id:'silk-eye-mask', name:'Silk Sleep Mask', group:'skincare', category:'Sleep / eye area',
+    purpose:'Blocks light for deeper sleep — the biggest lever on under-eye puffiness and eye-area fatigue.', linkedScores:['eyes'],
+    priority:'high', priceTier:'$', risk:'low', searchQuery:'Silk Sleep Eye Mask',
+    disclaimer:'General wellness product, not medical treatment.' },
+  { id:'caffeine-eye-serum', name:'The Ordinary Caffeine Solution 5% + EGCG', group:'skincare', category:'Eye area (optional)',
+    purpose:'Caffeine eye serum some people use for morning puffiness — a cosmetic top-up, not a fix for poor sleep.', linkedScores:['eyes'],
+    priority:'low', priceTier:'$', risk:'low', searchQuery:'The Ordinary Caffeine Solution 5% EGCG',
+    disclaimer:'Optional cosmetic product. Patch-test first, especially if allergy-prone around the eyes. Not medical treatment.' },
+  // --- grooming: brows ---
+  { id:'tweezerman-tweezers', name:'Tweezerman Slant Tweezer', group:'grooming', category:'Eyebrow grooming',
+    purpose:'Precision tweezers for cleaning up stray brow hairs without over-thinning.', linkedScores:['brows'],
+    priority:'high', priceTier:'$$', risk:'low', searchQuery:'Tweezerman Slant Tweezer',
+    disclaimer:'General grooming tool, not medical treatment.' },
+  { id:'brow-brush-spoolie', name:'Eyebrow Brush & Spoolie Set', group:'grooming', category:'Eyebrow grooming',
+    purpose:'Brushes brows into shape before trimming so you only cut what actually exceeds the line.', linkedScores:['brows'],
+    priority:'high', priceTier:'$', risk:'low', searchQuery:'Eyebrow Spoolie Brush Set',
+    disclaimer:'General grooming tool, not medical treatment.' },
+  { id:'small-grooming-scissors', name:'Small Grooming Scissors', group:'grooming', category:'Eyebrow grooming',
+    purpose:'Trims only the brow hairs that exceed the brush line — safer than tweezing for length control.', linkedScores:['brows'],
+    priority:'medium', priceTier:'$', risk:'low', searchQuery:'Small Precision Grooming Scissors Eyebrow',
+    disclaimer:'General grooming tool, not medical treatment.' },
+  // --- hair styling ---
+  { id:'matte-clay', name:'Matte Clay / Paste', group:'hair', category:'Hair styling',
+    purpose:'Low-shine hold that adds texture without looking wet — versatile for short-to-medium textured cuts.', linkedScores:['hairline'],
+    priority:'high', priceTier:'$', risk:'low', searchQuery:'Matte Hair Clay Paste Strong Hold',
+    disclaimer:'General styling product, not medical treatment.' },
+  { id:'sea-salt-spray', name:'Sea Salt Texture Spray', group:'hair', category:'Hair styling',
+    purpose:'Adds volume and texture — good for longer or wavy styles that need lift without stiffness.', linkedScores:['hairline'],
+    priority:'medium', priceTier:'$', risk:'low', searchQuery:'Sea Salt Texture Spray Hair',
+    disclaimer:'General styling product, not medical treatment.' },
+  { id:'texture-powder', name:'Hair Texture / Volume Powder', group:'hair', category:'Hair styling',
+    purpose:'Root-lift powder for fine or flat hair — pairs well with shorter, textured cuts.', linkedScores:['hairline'],
+    priority:'low', priceTier:'$$', risk:'low', searchQuery:'Hair Texture Volume Powder',
+    disclaimer:'General styling product, not medical treatment.' },
+  { id:'compact-blow-dryer', name:'Compact Ionic Blow Dryer', group:'hair', category:'Hair tool',
+    purpose:'Faster, more controlled styling than air-drying — useful for any face-shape-tailored cut.', linkedScores:['hairline'],
+    priority:'low', priceTier:'$$', risk:'low', searchQuery:'Compact Ionic Hair Blow Dryer',
+    disclaimer:'General styling tool, not medical treatment.' },
+  // --- facial hair ---
+  { id:'beard-trimmer', name:'Cordless Beard Trimmer with Guard Combs', group:'facialHair', category:'Facial hair grooming',
+    purpose:'Even length control for stubble-to-short-beard looks — the base tool for a deliberate facial-hair state.', linkedScores:['facialHair'],
+    priority:'high', priceTier:'$$', risk:'low', searchQuery:'Cordless Beard Trimmer Guard Combs',
+    disclaimer:'General grooming tool, not medical treatment.' },
+  { id:'neckline-guide', name:'Beard Neckline & Lineup Shaping Tool', group:'facialHair', category:'Facial hair grooming',
+    purpose:'Guides a clean, consistent neckline — the single change that most transforms a beard’s appearance.', linkedScores:['facialHair'],
+    priority:'high', priceTier:'$', risk:'low', searchQuery:'Beard Neckline Shaping Tool Template',
+    disclaimer:'General grooming tool, not medical treatment.' },
+  { id:'beard-oil', name:'Beard Oil (Lightweight, Fragrance-Light)', group:'facialHair', category:'Facial hair grooming',
+    purpose:'Softens beard hair and conditions the skin underneath — reduces itch during growth phases.', linkedScores:['facialHair'],
+    priority:'medium', priceTier:'$', risk:'low', searchQuery:'Beard Oil Conditioner',
+    disclaimer:'General grooming product, not medical treatment.' },
+  // --- posture / recovery ---
+  { id:'laptop-stand', name:'Adjustable Laptop Stand', group:'posture', category:'Posture / neck',
+    purpose:'Raises the screen to eye level so you stop looking down for hours a day — the root cause of forward-head posture.', linkedScores:['neckPosture','headPosture'],
+    priority:'high', priceTier:'$$', risk:'low', searchQuery:'Adjustable Laptop Stand Eye Level',
+    disclaimer:'General ergonomic product, not medical treatment.' },
+  { id:'phone-stand', name:'Adjustable Phone Stand', group:'posture', category:'Posture / neck',
+    purpose:'Keeps the phone at eye level instead of "text neck" angle — pairs with the chin-tuck habit.', linkedScores:['neckPosture','headPosture'],
+    priority:'medium', priceTier:'$', risk:'low', searchQuery:'Adjustable Phone Stand Eye Level Desk',
+    disclaimer:'General ergonomic product, not medical treatment.' },
+  { id:'resistance-band', name:'Light Resistance Band (Rows / Face Pulls)', group:'posture', category:'Posture / neck',
+    purpose:'Supports upper-back and rear-delt work that pulls the shoulders and head back into a neutral line.', linkedScores:['neckPosture','headPosture'],
+    priority:'medium', priceTier:'$', risk:'low', searchQuery:'Light Resistance Band Face Pulls Rows',
+    disclaimer:'General fitness product, not medical treatment. Stop if you feel neck or shoulder pain and consult a professional.' },
+  // --- photo setup ---
+  { id:'phone-tripod', name:'Phone Tripod with Remote', group:'photo', category:'Photo setup',
+    purpose:'Lets you shoot from a fixed distance at eye level instead of a distorting close-range selfie.', linkedScores:['photoInfluence'],
+    priority:'high', priceTier:'$', risk:'low', searchQuery:'Phone Tripod with Bluetooth Remote Shutter',
+    disclaimer:'General photography accessory, not medical treatment.' },
+  { id:'led-ring-light', name:'LED Ring Light (Desktop)', group:'photo', category:'Photo setup',
+    purpose:'Even, adjustable front lighting for consistent progress photos regardless of time of day.', linkedScores:['photoInfluence'],
+    priority:'medium', priceTier:'$$', risk:'low', searchQuery:'LED Ring Light Desktop Adjustable',
+    disclaimer:'General photography accessory, not medical treatment.' },
+  { id:'softbox-light', name:'Compact Softbox Light', group:'photo', category:'Photo setup',
+    purpose:'Softer, more diffused light than a ring light — reduces harsh shadows for a more neutral read.', linkedScores:['photoInfluence'],
+    priority:'low', priceTier:'$$$', risk:'low', searchQuery:'Compact Softbox Photography Light Kit',
+    disclaimer:'General photography accessory, not medical treatment.' },
+];
+
+/** Recommendation copy templates keyed by the report signal that triggers them. */
+const PRODUCT_REASONS = {
+  skin:      s => `Recommended because your Skin quality score was ${fmt1(s)}/10, and skin is highly controllable.`,
+  skinLow:   s => `Recommended because your Skin quality score was ${fmt1(s)}/10 — low enough that texture/breakout support may help alongside the basics.`,
+  eyes:      s => `Recommended because your Eye area score was ${fmt1(s)}/10 — mostly a sleep and puffiness story.`,
+  lips:      s => `Recommended because your Lips & mouth score was ${fmt1(s)}/10, and hydration is a fast, controllable fix.`,
+  brows:     () => 'Recommended because eyebrow grooming is a guidance category in your report — not auto-scored, but fully controllable.',
+  hairline:  () => 'Recommended because haircut/style suitability is a guidance category in your report, tied to your estimated face shape.',
+  facialHair:() => 'Recommended because facial-hair strategy is a guidance category in your report — a deliberate choice beats an undecided one.',
+  posture:   s => `Recommended because your posture score was ${fmt1(s)}/10 — forward-head posture visibly buries jawline definition.`,
+  photo:     s => `Recommended because photo quality (${fmt1(s)}/10) lowered confidence in your report.`,
+};
+
 /* =========================================================================
    3. LANDMARK ENGINE — MediaPipe Face Landmarker (Tasks Vision API).
    Runs fully in the browser: the model file is fetched once from Google's
@@ -2280,13 +2471,14 @@ const TAB_RENDER = {
   skin:      renderSkin,
   photo:     renderPhoto,
   plan:      renderPlan,
+  products:  renderProducts,
   progress:  renderProgress,
 };
 function switchTab(name){
   App.tab = name;
   $$('#tabbar .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   const panels = { overview:'#panelOverview', structure:'#panelStructure', skin:'#panelSkin',
-                   photo:'#panelPhoto', plan:'#panelPlan', progress:'#panelProgress' };
+                   photo:'#panelPhoto', plan:'#panelPlan', products:'#panelProducts', progress:'#panelProgress' };
   for (const [k, sel] of Object.entries(panels)) $(sel).hidden = (k !== name);
   TAB_RENDER[name]();
 }
@@ -2710,6 +2902,155 @@ function renderPlanProgressOnly(){
   bar.querySelector('.mono').textContent = `${done}/${total}`;
   bar.querySelector('.meter i').style.width = (total ? done / total * 100 : 0) + '%';
   bar.querySelector('.tiny').textContent = done === total && total > 0 ? 'Plan complete — re-shoot and re-analyze.' : 'completed';
+}
+
+/* ---- PRODUCTS TAB ---- */
+
+/**
+ * How relevant a single product is to this report, plus the human-readable
+ * reason and the score that triggered it. Returns null when the product
+ * doesn't apply (e.g. its category wasn't weak, or is guidance-only and the
+ * report has no signal for it).
+ */
+function scoreProductRelevance(product, report){
+  const scores = report.scores;
+  const priorityWeight = { high:1, medium:0.6, low:0.32 }[product.priority] ?? 0.6;
+  const riskPenalty = product.risk === 'medium' ? 0.85 : 1;
+  let best = null; // { relevance, reason, triggerScore, triggerLabel }
+
+  const consider = (relevance, reason, triggerScore, triggerLabel) => {
+    const weighted = relevance * priorityWeight * riskPenalty;
+    if (!best || weighted > best.relevance) best = { relevance: weighted, reason, triggerScore, triggerLabel };
+  };
+
+  for (const id of product.linkedScores){
+    const s = scores[id];
+    if (id === 'skin' && product.category === 'Texture support'){
+      // acne/texture actives only surface once skin quality is clearly low
+      if (s != null && s < 6) consider((6 - s) / 6 + 0.5, PRODUCT_REASONS.skinLow(s), s, 'Skin quality');
+    } else if (id === 'skin'){
+      if (s != null && s < 7) consider((7 - s) / 7 + 0.2, PRODUCT_REASONS.skin(s), s, 'Skin quality');
+    }
+    if (id === 'eyes' && s != null && s < 7)
+      consider((7 - s) / 7 + 0.3, PRODUCT_REASONS.eyes(s), s, 'Eye area aesthetics');
+    if (id === 'lips' && s != null && s < 7)
+      consider((7 - s) / 7 + 0.3, PRODUCT_REASONS.lips(s), s, 'Lips & mouth balance');
+    if (id === 'brows' && s == null)
+      consider(0.55, PRODUCT_REASONS.brows(), null, 'Eyebrow shape & grooming');
+    if (id === 'hairline' && s == null)
+      consider(0.5, PRODUCT_REASONS.hairline(), null, 'Hairline & haircut suitability');
+    if (id === 'facialHair' && s == null)
+      consider(0.5, PRODUCT_REASONS.facialHair(), null, 'Facial hair & grooming');
+    // neckPosture is a guidance category (never auto-scored) — measured
+    // headPosture is the real signal for both, so only gate on it once
+    if (id === 'headPosture'){
+      const ps = scores.headPosture;
+      if (ps != null && ps < 7.5)
+        consider((7.5 - ps) / 7.5 + 0.25, PRODUCT_REASONS.posture(ps), ps, 'Head posture & angle habits');
+      else if (ps == null)
+        consider(0.35, PRODUCT_REASONS.posture(6), null, 'Neck / head posture');
+    }
+    if (id === 'photoInfluence' && s != null && s < 7)
+      consider((7 - s) / 7 + 0.25, PRODUCT_REASONS.photo(s), s, 'Photo angle & lighting influence');
+  }
+
+  return best;
+}
+
+/**
+ * Build the ranked, grouped recommendation set for a report.
+ * Returns { top: Product[], groups: { group: Product[] } } — every product
+ * carries its computed .reason / .triggerScore / .triggerLabel / .relevance.
+ */
+function getProductRecommendations(report){
+  const priceRank = { '$':0, '$$':1, '$$$':2 };
+  const matched = [];
+  for (const product of PRODUCT_DB){
+    const hit = scoreProductRelevance(product, report);
+    if (hit && hit.relevance > 0.12) matched.push({ ...product, ...hit });
+  }
+  // 1) highest relevance to weak controllable categories · 2) lowest risk first · 3) cheapest first
+  matched.sort((a, b) =>
+    b.relevance - a.relevance ||
+    (a.risk === b.risk ? 0 : a.risk === 'low' ? -1 : 1) ||
+    priceRank[a.priceTier] - priceRank[b.priceTier]);
+
+  const groups = {};
+  for (const p of matched) (groups[p.group] ||= []).push(p);
+  return { top: matched.slice(0, 5), groups };
+}
+
+const PRODUCT_GROUP_META = {
+  skincare: { title:'Skincare', icon:'spark' },
+  grooming: { title:'Grooming', icon:'scissors' },
+  hair:     { title:'Hair', icon:'scissors' },
+  facialHair:{ title:'Facial Hair', icon:'face' },
+  photo:    { title:'Photo Setup', icon:'camera' },
+  posture:  { title:'Posture / Recovery', icon:'posture' },
+};
+
+/** One product recommendation card. */
+function productCard(product){
+  return el(`
+    <div class="card product-card">
+      <div class="pc-top">
+        <span class="pc-ic">${icon(PRODUCT_GROUP_META[product.group]?.icon || 'bag')}</span>
+        <span style="flex:1;min-width:0">
+          <h4>${esc(product.name)}</h4>
+          <div class="pc-cat">${esc(product.category)}</div>
+        </span>
+        <span class="pc-badges">
+          <span class="tier-badge">${esc(product.priceTier)}</span>
+          <span class="risk-badge risk-${product.risk}">${product.risk === 'low' ? 'Low risk' : 'Medium risk'}</span>
+        </span>
+      </div>
+      <p class="pc-purpose">${esc(product.purpose)}</p>
+      <div class="pc-why">${icon('info')}<span>${esc(product.reason)}${product.triggerLabel ? `<br><span class="tiny">Triggered by: ${esc(product.triggerLabel)}${product.triggerScore != null ? ` (${fmt1(product.triggerScore)}/10)` : ''}</span>` : ''}</span></div>
+      ${product.disclaimer ? `<p class="tiny">${esc(product.disclaimer)}</p>` : ''}
+      <div class="pc-foot">
+        <button class="btn" data-search="${esc(product.searchQuery)}">${icon('search','ic sm')} Search product</button>
+      </div>
+    </div>`);
+}
+
+function wireProductSearchButtons(root){
+  $$('[data-search]', root).forEach(btn => btn.addEventListener('click', () => {
+    const url = 'https://www.google.com/search?q=' + encodeURIComponent(btn.dataset.search);
+    window.open(url, '_blank', 'noopener');
+  }));
+}
+
+function renderProducts(){
+  const r = App.report;
+  const root = $('#panelProducts');
+  const { top, groups } = getProductRecommendations(r);
+
+  root.innerHTML = sectionTitle('bag', 'Recommended products',
+    'Suggestions based on your report’s weakest controllable categories — not a store, just a starting point.') + `
+    <div class="card" style="margin-bottom:20px"><div class="qc-flag ok" style="align-items:flex-start">${icon('shield')}
+      <span>Product recommendations are general suggestions based on your report’s controllable categories. They are not medical advice.
+      Patch test skincare products, introduce one product at a time, and stop using anything that irritates your skin.</span></div></div>`;
+
+  if (!top.length){
+    root.appendChild(el(`<div class="empty-note">No product recommendations were triggered — your controllable categories are already scoring well. Nothing to add here.</div>`));
+    return;
+  }
+
+  root.insertAdjacentHTML('beforeend', `<div class="product-group-title">${icon('spark')} Highest ROI products <span class="count">${top.length}</span></div>`);
+  const topGrid = el('<div class="grid c3"></div>');
+  top.forEach(p => topGrid.appendChild(productCard(p)));
+  root.appendChild(topGrid);
+
+  for (const [groupId, meta] of Object.entries(PRODUCT_GROUP_META)){
+    const items = groups[groupId];
+    if (!items || !items.length) continue;
+    root.insertAdjacentHTML('beforeend', `<div class="product-group-title">${icon(meta.icon)} ${meta.title} <span class="count">${items.length}</span></div>`);
+    const grid = el('<div class="grid c3"></div>');
+    items.forEach(p => grid.appendChild(productCard(p)));
+    root.appendChild(grid);
+  }
+
+  wireProductSearchButtons(root);
 }
 
 /* ---- PROGRESS TAB ---- */
