@@ -170,7 +170,6 @@
       var(--card);
     border-color:color-mix(in srgb, var(--accent) 20%, var(--border));
   }
-  section.pad{ padding:8px 16px 0; }
 
   .stagger > .card{ animation:card-in 0.35s ease backwards; }
   .stagger > .card:nth-child(2){ animation-delay:0.05s; }
@@ -255,6 +254,35 @@
   .stat-big{ font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:600; line-height:1.15; }
   .stat-sub{ font-size:12px; color:var(--dim); margin-top:1px; }
   .stat-row{ margin-top:10px; }
+  .week-seg{ display:flex; gap:5px; margin-top:12px; }
+  .week-seg .seg{
+    flex:1;
+    height:8px;
+    border-radius:999px;
+    background:var(--card-2);
+    position:relative;
+    overflow:hidden;
+  }
+  .week-seg .seg i{
+    position:absolute; inset:0;
+    width:0%;
+    border-radius:999px;
+    background:var(--accent);
+    transition:width 0.5s cubic-bezier(0.3,0.8,0.3,1), background 0.3s ease;
+  }
+  .week-seg .seg.full i{ background:var(--good); }
+  .live-dot{
+    width:7px; height:7px;
+    border-radius:999px;
+    background:var(--good);
+    display:inline-block;
+    animation:live-pulse 1.8s ease-in-out infinite;
+  }
+  .live-dot[hidden]{ display:none; }
+  @keyframes live-pulse{
+    0%,100%{ opacity:1; transform:scale(1); }
+    50%{ opacity:0.35; transform:scale(0.8); }
+  }
   .streak-tag[hidden]{ display:none; }
   .streak-tag{
     display:inline-block;
@@ -340,13 +368,16 @@
   .bw-k{ font-size:11px; color:var(--faint); }
   .bw-v{ font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:600; margin-top:1px; }
   .spark{ width:150px; height:44px; }
-  .spark polyline{
+  .spark .spark-line{
     fill:none;
     stroke:var(--accent);
     stroke-width:2;
     stroke-linecap:round;
     stroke-linejoin:round;
   }
+  .spark .spark-dot{ fill:var(--accent); }
+  .bw-goal-track{ margin-top:12px; height:6px; }
+  .bw-goal-label{ font-size:11px; color:var(--faint); margin-top:5px; }
   .bw-inputs{ display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; align-items:center; }
   .bw-inputs label{ font-size:11px; color:var(--faint); display:flex; align-items:center; gap:6px; }
 
@@ -629,7 +660,17 @@
     color:var(--dim);
     display:flex;
     flex-direction:column;
-    gap:4px;
+    gap:6px;
+  }
+  .hist-row{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+  .hist-row .h-date{ color:var(--faint); font-size:11px; white-space:nowrap; }
+  .hist-row .h-rm{
+    color:var(--accent);
+    font-size:11px;
+    background:var(--accent-soft);
+    border-radius:999px;
+    padding:1px 8px;
+    white-space:nowrap;
   }
   .hist-lines .best{ color:var(--warn); }
   .hist-lines .delta{ color:var(--good); }
@@ -714,7 +755,6 @@
   .chart text{ font-family:'JetBrains Mono',monospace; font-size:9px; fill:var(--faint); }
   .chart .bar{ fill:var(--accent); rx:3; transition:height 0.5s ease, y 0.5s ease; }
   .chart .bar.good{ fill:var(--good); }
-  .chart .bar.dimmed{ fill:var(--card-2); }
   .anim-draw{
     stroke-dasharray:1200;
     stroke-dashoffset:1200;
@@ -751,13 +791,24 @@
   .pr-line{
     display:flex;
     justify-content:space-between;
+    align-items:center;
     gap:10px;
-    padding:8px 0;
+    padding:9px 0;
     border-bottom:1px solid var(--border);
     font-size:12.5px;
   }
   .pr-line:last-child{ border-bottom:none; }
-  .pr-line .who{ font-weight:600; }
+  .pr-line .who{ font-weight:600; display:flex; align-items:center; gap:8px; min-width:0; }
+  .pr-line .who span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pr-dot{
+    width:8px; height:8px;
+    border-radius:999px;
+    flex:0 0 auto;
+  }
+  .pr-dot.w{ background:var(--accent); }
+  .pr-dot.r{ background:var(--good); }
+  .pr-dot.rm{ background:var(--warn); }
+  .pr-dot.v{ background:var(--bad); }
   .pr-line .what{ color:var(--dim); font-family:'JetBrains Mono',monospace; font-size:12px; }
   .pr-line .when{ color:var(--faint); font-size:11px; white-space:nowrap; }
   .empty-note{ color:var(--faint); font-size:12.5px; padding:6px 0; }
@@ -775,13 +826,13 @@
   .supp-row{
     display:flex;
     align-items:flex-start;
-    gap:12px;
+    gap:11px;
     background:var(--card);
     border:1px solid var(--border);
     border-radius:var(--r);
     box-shadow:var(--shadow);
-    padding:12px 14px;
-    margin-bottom:10px;
+    padding:9px 13px;
+    margin-bottom:8px;
     transition:border-color 0.25s ease;
   }
   .supp-row.taken{ border-color:rgba(62,207,142,0.4); }
@@ -808,7 +859,7 @@
   }
   .supp-check.auto{ cursor:default; }
   .supp-main{ flex:1; min-width:0; }
-  .supp-name{ font-size:14px; font-weight:600; }
+  .supp-name{ font-size:13.5px; font-weight:600; line-height:1.9; }
   .supp-name .opt{
     font-size:10px; font-weight:700; color:var(--faint);
     text-transform:uppercase; letter-spacing:0.06em; margin-left:8px;
@@ -963,6 +1014,7 @@
   }
   .sheet.open .dialog-card{ transform:scale(1); opacity:1; }
   .dialog-title{ font-size:16px; font-weight:700; }
+  .dialog-title.danger{ color:var(--bad); }
   .dialog-msg{ font-size:13px; color:var(--dim); margin-top:6px; line-height:1.5; }
   .dialog-actions{ display:flex; gap:10px; margin-top:18px; }
   .dialog-actions button{
@@ -1057,7 +1109,10 @@
             <button class="resume-btn" id="resume-btn">Start workout</button>
           </div>
           <div class="session-timer">
-            <span class="timer-clock" id="session-clock" aria-label="Session time">0:00</span>
+            <span style="display:flex;align-items:center;gap:7px">
+              <span class="live-dot" id="session-live" hidden></span>
+              <span class="timer-clock" id="session-clock" aria-label="Session time">0:00</span>
+            </span>
             <button class="ghost-btn" id="session-pause-btn" disabled>Pause</button>
           </div>
         </div>
@@ -1072,7 +1127,7 @@
             <div class="stat-big" style="font-size:15px" id="dash-week-sets">0 / 0</div>
             <div class="stat-sub">sets this week</div>
           </div>
-          <div class="pill-track" style="margin-top:12px"><div class="pill-fill" id="dash-week-fill" style="width:0%"></div></div>
+          <div class="week-seg" id="dash-week-seg" aria-hidden="true"></div>
           <span class="streak-tag" id="dash-streak" hidden></span>
         </div>
         <div class="card">
@@ -1101,6 +1156,8 @@
           </div>
           <svg class="spark" id="bw-spark" viewBox="0 0 150 44" preserveAspectRatio="none" aria-hidden="true"></svg>
         </div>
+        <div class="pill-track bw-goal-track" id="bw-goal-track" hidden><div class="pill-fill good" id="bw-goal-fill" style="width:0%"></div></div>
+        <div class="bw-goal-label" id="bw-goal-label" hidden></div>
         <div class="bw-inputs">
           <label>today <input type="text" id="bw-input" class="weight-input" placeholder="184.5" inputmode="decimal" aria-label="Today's bodyweight"></label>
           <label>goal <input type="text" id="bw-goal" class="weight-input" placeholder="goal" inputmode="decimal" aria-label="Goal bodyweight"></label>
@@ -1221,7 +1278,7 @@
           <button class="ghost-btn" id="export-btn">Export</button>
         </div>
         <div class="set-line">
-          <span class="k">Import backup</span>
+          <span class="k">Import backup<span class="hint">pick a ledger-backup-….json file — asks before overwriting</span></span>
           <button class="ghost-btn" id="import-btn">Import</button>
           <input type="file" id="import-file" accept="application/json" hidden>
         </div>
@@ -1245,6 +1302,7 @@
         <div class="set-line"><span class="k">Storage used</span><span class="v" id="about-storage"></span></div>
         <div class="set-line"><span class="k">Installed as app</span><span class="v" id="about-pwa"></span></div>
         <div class="set-line"><span class="k">Offline ready</span><span class="v" id="about-offline"></span></div>
+        <div class="set-line"><span class="k">Network</span><span class="v" id="about-net"></span></div>
       </div>
 
       <div class="card notes-list">
@@ -1631,8 +1689,11 @@ function initSettingsView(){
     Object.keys(checks).forEach(k=>{ if(k.startsWith(today + '-')) delete checks[k]; });
     storeSet('ledger-checks', checks);
     localStorage.removeItem('ledger-session');
+    updateSessionPauseBtn();
+    tickSessionClock();
     refreshAfterCheckChange();
     showDay(currentDayKey);
+    showToast('Today\'s workout reset', 'info');
   });
 
   document.getElementById('btn-nuke').addEventListener('click', async ()=>{
@@ -1664,11 +1725,20 @@ function initSettingsView(){
   const offlineEl = document.getElementById('about-offline');
   if('serviceWorker' in navigator && location.protocol === 'https:'){
     navigator.serviceWorker.getRegistration().then(reg=>{
-      offlineEl.textContent = reg ? 'Yes — cached for offline' : 'Registering…';
+      offlineEl.textContent = reg ? '✓ Cached for offline' : 'Registering…';
+      offlineEl.style.color = reg ? 'var(--good)' : '';
     });
   } else {
     offlineEl.textContent = location.protocol === 'https:' ? 'Unavailable' : 'Needs https hosting';
   }
+  function updateNetStatus(){
+    const el = document.getElementById('about-net');
+    el.textContent = navigator.onLine ? '● Online' : '○ Offline — app still works';
+    el.style.color = navigator.onLine ? 'var(--good)' : 'var(--warn)';
+  }
+  window.addEventListener('online', updateNetStatus);
+  window.addEventListener('offline', updateNetStatus);
+  updateNetStatus();
 
   syncToggles();
 }
@@ -1772,8 +1842,8 @@ function historyFoldHtml(dayKey, idx){
   if(!hist.length) return '';
   const lines = hist.map(h=>{
     const reps = h.reps && h.reps.length ? ` × ${h.reps.map(escapeHtml).join(' / ')}` : '';
-    const rm = h.e1rm ? ` · e1RM ${h.e1rm}` : '';
-    return `<div>${escapeHtml(h.date)} — ${escapeHtml(h.weight || '—')}${reps}${rm}</div>`;
+    const rm = h.e1rm ? `<span class="h-rm">e1RM ${h.e1rm}</span>` : '';
+    return `<div class="hist-row"><span class="h-date">${escapeHtml(h.date.slice(5))}</span><span>${escapeHtml(h.weight || '—')}${reps}</span>${rm}</div>`;
   }).join('');
   const all = getHistory()[key] || [];
   let deltaLine = '';
@@ -1994,7 +2064,12 @@ function handleExerciseCompletion(card, dayKey, idx, ex){
   }
   if(prEvents.length){
     const log = getPrEvents();
-    prEvents.forEach(ev=>log.push({ ...ev, name: ex.name, date: today }));
+    // Dedupe: re-toggling the final set the same day must not spam the timeline.
+    prEvents.forEach(ev=>{
+      if(!log.some(x=>x.date === today && x.name === ex.name && x.type === ev.type)){
+        log.push({ ...ev, name: ex.name, date: today });
+      }
+    });
     storeSet('ledger-pr-history', log.slice(-200));
   }
 
@@ -2106,6 +2181,16 @@ function consistencyPct(days){
   }
   return scheduled ? Math.round((trained/scheduled)*100) : 0;
 }
+function nextWorkoutKey(){
+  const d = new Date();
+  for(let i=1; i<=7; i++){
+    d.setDate(d.getDate()+1);
+    const k = DAY_ORDER[d.getDay()];
+    if(DATA[k] && !DATA[k].rest) return k;
+  }
+  return null;
+}
+
 function estRemainingMin(){
   const key = getTodayKey();
   const day = DATA[key];
@@ -2137,13 +2222,14 @@ function renderDashboard(){
   const resumeBtn = document.getElementById('resume-btn');
 
   if(day.rest){
+    const nk = nextWorkoutKey();
     titleEl.textContent = 'Rest day';
     subEl.textContent = 'Recovery counts';
-    etaEl.textContent = '';
+    etaEl.textContent = nk ? `Next: ${DATA[nk].title} · ${DAY_NAMES[nk]}` : '';
     ring.style.strokeDashoffset = RING_DASH;
     ringPct.textContent = '—';
     ringWrap.classList.remove('done');
-    resumeBtn.textContent = 'View plan';
+    resumeBtn.textContent = nk ? `Preview ${DATA[nk].title}` : 'View plan';
   } else {
     const p = dayProgress(todayKey);
     const pct = p.total ? Math.round((p.done/p.total)*100) : 0;
@@ -2160,10 +2246,14 @@ function renderDashboard(){
   const ws = weekStats();
   document.getElementById('dash-week-days').textContent = `${ws.daysDone} / ${ws.daysTotal}`;
   document.getElementById('dash-week-sets').textContent = `${ws.doneSets} / ${ws.totalSets}`;
-  const weekPct = ws.totalSets ? Math.round((ws.doneSets/ws.totalSets)*100) : 0;
-  const wf = document.getElementById('dash-week-fill');
-  wf.style.width = `${weekPct}%`;
-  wf.classList.toggle('good', weekPct === 100);
+  // One segment per training day (Mon→Sat order), filling with that day's progress.
+  const seg = document.getElementById('dash-week-seg');
+  const trainKeys = ['mon','tue','wed','thu','fri','sat','sun'].filter(k=>DATA[k] && !DATA[k].rest);
+  seg.innerHTML = trainKeys.map(k=>{
+    const p = dayProgress(k);
+    const pct = p && p.total ? Math.round((p.done/p.total)*100) : 0;
+    return `<span class="seg ${pct===100 ? 'full':''}" title="${DAY_NAMES[k]}"><i style="width:${pct}%"></i></span>`;
+  }).join('');
   const streak = workoutStreak();
   const streakEl = document.getElementById('dash-streak');
   streakEl.hidden = streak < 2;
@@ -2252,7 +2342,25 @@ function renderBodyweight(){
   const togoEl = document.getElementById('bw-togo');
   togoEl.textContent = (!isNaN(goal) && latest) ? `${Math.abs(latest.v - goal).toFixed(1)}` : '—';
 
-  // sparkline of the last 30 entries
+  // Goal progress bar: distance covered from the ~30-day-ago reference toward the goal.
+  const goalTrack = document.getElementById('bw-goal-track');
+  const goalLabel = document.getElementById('bw-goal-label');
+  let showGoal = false;
+  if(!isNaN(goal) && latest && entries.length >= 2){
+    const ref = (entries.filter(e=>e.date <= cutoff).pop() || entries[0]).v;
+    const totalDist = ref - goal;
+    if(Math.abs(totalDist) > 0.5){
+      const covered = ref - latest.v;
+      const pct = Math.max(0, Math.min(100, Math.round((covered/totalDist)*100)));
+      document.getElementById('bw-goal-fill').style.width = `${pct}%`;
+      goalLabel.textContent = `${pct}% of the way from ${ref.toFixed(1)} to ${goal} ${unit}`;
+      showGoal = true;
+    }
+  }
+  goalTrack.hidden = !showGoal;
+  goalLabel.hidden = !showGoal;
+
+  // Smooth gradient sparkline of the last 30 entries
   const svg = document.getElementById('bw-spark');
   const pts = entries.slice(-30);
   if(pts.length >= 2){
@@ -2260,11 +2368,35 @@ function renderBodyweight(){
     const min = Math.min(...vals), max = Math.max(...vals);
     const span = (max-min) || 1;
     const step = 150/(pts.length-1);
-    const poly = pts.map((p,i)=>`${(i*step).toFixed(1)},${(40 - ((p.v-min)/span)*36 + 2).toFixed(1)}`).join(' ');
-    svg.innerHTML = `<polyline points="${poly}"></polyline>`;
+    const xy = pts.map((p,i)=>[i*step, 40 - ((p.v-min)/span)*34 + 2]);
+    const line = smoothPathD(xy);
+    const area = `${line} L150,44 L0,44 Z`;
+    const lastPt = xy[xy.length-1];
+    svg.innerHTML = `
+      <defs><linearGradient id="bw-grad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" style="stop-color:var(--accent)" stop-opacity="0.3"/>
+        <stop offset="1" style="stop-color:var(--accent)" stop-opacity="0"/>
+      </linearGradient></defs>
+      <path fill="url(#bw-grad)" d="${area}"></path>
+      <path class="spark-line" d="${line}"></path>
+      <circle class="spark-dot" cx="${lastPt[0].toFixed(1)}" cy="${lastPt[1].toFixed(1)}" r="2.5"></circle>`;
   } else {
     svg.innerHTML = '';
   }
+}
+
+// Quadratic midpoint smoothing for sparkline-style curves.
+function smoothPathD(xy){
+  if(xy.length < 3) return 'M' + xy.map(p=>`${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' L');
+  let d = `M${xy[0][0].toFixed(1)},${xy[0][1].toFixed(1)}`;
+  for(let i=1; i<xy.length-1; i++){
+    const mx = (xy[i][0] + xy[i+1][0]) / 2;
+    const my = (xy[i][1] + xy[i+1][1]) / 2;
+    d += ` Q${xy[i][0].toFixed(1)},${xy[i][1].toFixed(1)} ${mx.toFixed(1)},${my.toFixed(1)}`;
+  }
+  const last = xy[xy.length-1];
+  d += ` L${last[0].toFixed(1)},${last[1].toFixed(1)}`;
+  return d;
 }
 function initBodyweight(){
   const input = document.getElementById('bw-input');
@@ -2305,6 +2437,7 @@ function startRestTimer(key, seconds, btn, exName){
   rest.btn = btn || null;
   if(rest.tick) clearInterval(rest.tick);
   rest.tick = setInterval(tickRest, 250);
+  document.querySelector('.rest-ring-wrap').classList.remove('done');
   openRestSheet(exName);
   syncRestSoundBtn();
   tickRest();
@@ -2336,9 +2469,15 @@ function finishRest(){
   clearInterval(rest.tick);
   rest.tick = null;
   rest.endsAt = null;
+  // Visible "done" beat: full green ring + label before the sheet slides away.
+  const wrap = document.querySelector('.rest-ring-wrap');
+  wrap.classList.add('done');
+  document.getElementById('rest-ring').style.strokeDashoffset = 0;
+  document.getElementById('rest-time').textContent = 'Done';
+  document.getElementById('rest-total').textContent = 'back to work';
   if(soundEnabled()) beep();
   haptic([40,60,40]);
-  setTimeout(closeRestSheet, 900);
+  setTimeout(closeRestSheet, 1200);
 }
 function skipRest(){
   clearInterval(rest.tick);
@@ -2386,6 +2525,7 @@ function beep(){
       o.start(ctx.currentTime + t);
       o.stop(ctx.currentTime + t + 0.2);
     });
+    setTimeout(()=>ctx.close(), 700);
   } catch(e){}
 }
 function initRestSheet(){
@@ -2443,7 +2583,10 @@ function tickSessionClock(){
   const el = document.getElementById('session-clock');
   if(!el) return;
   const sess = getSession();
-  el.textContent = formatDuration(sess && sess.date === localDateStr() ? computeElapsedSec(sess) : 0);
+  const active = sess && sess.date === localDateStr();
+  el.textContent = formatDuration(active ? computeElapsedSec(sess) : 0);
+  const dot = document.getElementById('session-live');
+  if(dot) dot.hidden = !(active && !sess.paused);
 }
 
 /* =========================================================
@@ -2465,12 +2608,15 @@ let confirmResolve = null;
 function appConfirm({ title, message, confirmLabel = 'Confirm', danger = false }){
   return new Promise(resolve=>{
     confirmResolve = resolve;
-    document.getElementById('confirm-title').textContent = title;
+    const titleEl = document.getElementById('confirm-title');
+    titleEl.textContent = title;
+    titleEl.classList.toggle('danger', danger);
     document.getElementById('confirm-msg').textContent = message;
     const ok = document.getElementById('confirm-ok');
     ok.textContent = confirmLabel;
     ok.classList.toggle('danger-btn', danger);
     document.getElementById('confirm-sheet').classList.add('open');
+    setTimeout(()=>document.getElementById('confirm-cancel').focus(), 80);
   });
 }
 function resolveConfirm(val){
@@ -2516,7 +2662,7 @@ function miniConfetti(n){
 let chartUid = 0;
 const chartRegistry = {};
 
-function svgLineChart(points, { h=140, yLabel='', unit='', empty='Not enough data yet — complete a few sessions.' } = {}){
+function svgLineChart(points, { h=140, yLabel='', unit='', empty='Not enough data yet — complete a few sessions.', overlay=null } = {}){
   // points: [{x:label, y:number}]
   const w = 320, padL = 34, padR = 8, padT = 10, padB = 20;
   if(points.length < 2) return `<div class="empty-note">${escapeHtml(empty)}</div>`;
@@ -2530,7 +2676,14 @@ function svgLineChart(points, { h=140, yLabel='', unit='', empty='Not enough dat
   const area = `${path} L${px(points.length-1).toFixed(1)},${(padT+ih).toFixed(1)} L${padL},${(padT+ih).toFixed(1)} Z`;
   const first = points[0].x, last = points[points.length-1].x;
   const uid = 'ch' + (++chartUid);
-  chartRegistry[uid] = { points, w, padL, padR, px, py, unit };
+  chartRegistry[uid] = { points, w, h, padL, padR, px, py, unit };
+  // Optional overlay series (e.g. moving average), drawn on the same y-scale.
+  let overlayPath = '';
+  if(overlay && overlay.length >= 2){
+    const opx = i => padL + (i/(overlay.length-1))*iw;
+    overlayPath = `<path class="line" style="stroke:var(--good);stroke-dasharray:4 5;opacity:0.85" d="${
+      overlay.map((v,i)=>`${i?'L':'M'}${opx(i).toFixed(1)},${py(v).toFixed(1)}`).join(' ')}"/>`;
+  }
   const gridLines = [0.25, 0.5, 0.75].map(f=>{
     const y = padT + ih*f;
     return `<line class="grid" x1="${padL}" y1="${y.toFixed(1)}" x2="${w-padR}" y2="${y.toFixed(1)}"/>`;
@@ -2546,6 +2699,7 @@ function svgLineChart(points, { h=140, yLabel='', unit='', empty='Not enough dat
       ${gridLines}
       <line class="axis" x1="${padL}" y1="${padT+ih}" x2="${w-padR}" y2="${padT+ih}"/>
       <path class="area" fill="url(#grad-${uid})" d="${area}"/>
+      ${overlayPath}
       <path class="line anim-draw" d="${path}"/>
       <circle class="dot" cx="${px(points.length-1)}" cy="${py(points[points.length-1].y)}" r="3"/>
       <circle class="tip-dot" data-role="tip-dot" r="4" opacity="0"/>
@@ -2579,7 +2733,7 @@ function initChartTooltips(container){
     tip.hidden = false;
     tip.textContent = `${p.x} · ${p.y}${data.unit ? ' ' + data.unit : ''}`;
     tip.style.left = `${(data.px(idx)/data.w)*100}%`;
-    tip.style.top = `${(data.py(p.y)/140)*100}%`;
+    tip.style.top = `${(data.py(p.y)/data.h)*100}%`;
     const dot = wrap.querySelector('[data-role="tip-dot"]');
     dot.setAttribute('cx', data.px(idx));
     dot.setAttribute('cy', data.py(p.y));
@@ -2670,11 +2824,16 @@ function renderProgress(){
   const hist = getHistory();
   const unit = unitLabel();
 
-  /* Bodyweight chart */
+  /* Bodyweight chart with 7-day moving-average overlay */
   const bw = bwEntriesSorted().slice(-60);
+  const bwMA = bw.map((_, i)=>{
+    const win = bw.slice(Math.max(0, i-6), i+1);
+    return +(win.reduce((a,e)=>a+e.v, 0) / win.length).toFixed(1);
+  });
   const bwChart = svgLineChart(bw.map(e=>({ x:e.date.slice(5), y:e.v })), {
     yLabel:'bodyweight', unit,
-    empty:'Log your morning weight on the dashboard to start this trend line.'
+    empty:'Log your morning weight on the dashboard to start this trend line.',
+    overlay: bw.length >= 2 ? bwMA : null
   });
 
   /* Lift select + e1RM chart */
@@ -2763,9 +2922,14 @@ function renderProgress(){
     : `<div class="empty-note">Complete your first workout to start building analytics.</div>`;
 
   /* PR timeline */
+  const PR_DOT = { 'Heaviest weight':'w', 'Most reps':'r', 'Estimated 1RM':'rm', 'Session volume':'v' };
   const prs = getPrEvents().slice(-12).reverse();
   const prList = prs.length
-    ? prs.map(p=>`<div class="pr-line"><span class="who">${escapeHtml(p.name)}</span><span class="what">${escapeHtml(p.type)} · ${escapeHtml(p.detail)}</span><span class="when">${escapeHtml(p.date.slice(5))}</span></div>`).join('')
+    ? prs.map(p=>`<div class="pr-line">
+        <span class="who"><span class="pr-dot ${PR_DOT[p.type] || 'w'}"></span><span>${escapeHtml(p.name)}</span></span>
+        <span class="what">${escapeHtml(p.type)} · ${escapeHtml(p.detail)}</span>
+        <span class="when">${escapeHtml(p.date.slice(5))}</span>
+      </div>`).join('')
     : `<div class="empty-note">No PRs yet — your first one is coming.</div>`;
 
   /* Lifetime statistics */
@@ -3321,9 +3485,12 @@ function init(){
         setTimeout(()=>{
           if(!card.isConnected || !card.classList.contains('complete')) return;
           card.classList.add('collapsed');
-          const next = [...document.querySelectorAll('#day-content .exercise')]
-            .find(c=>!c.classList.contains('complete'));
-          if(next) setTimeout(()=>next.scrollIntoView({ behavior:'smooth', block:'center' }), 380);
+          // Prefer the next incomplete exercise after this one; wrap to the
+          // first incomplete only if everything below is already done.
+          const cards = [...document.querySelectorAll('#day-content .exercise')];
+          const after = cards.slice(cards.indexOf(card) + 1).find(c=>!c.classList.contains('complete'));
+          const next = after || cards.find(c=>!c.classList.contains('complete'));
+          if(next) setTimeout(()=>next.scrollIntoView({ behavior:'smooth', block:'center' }), 400);
         }, 750);
       }
       return;
@@ -3350,6 +3517,15 @@ function init(){
     else if(t.classList.contains('reps-input')) saveRep(t.dataset.key, t.value);
     else if(t.classList.contains('note-input')) saveMyNote(t.dataset.key, t.value);
   });
+  // Select-all on focus for quick overwrites; Enter dismisses the keyboard.
+  content.addEventListener('focusin', e=>{
+    if(e.target.classList.contains('weight-input') || e.target.classList.contains('reps-input')){
+      e.target.select();
+    }
+  });
+  content.addEventListener('keydown', e=>{
+    if(e.key === 'Enter' && e.target.matches('input')) e.target.blur();
+  });
 
   showDay(getTodayKey());
   updateNavStates();
@@ -3369,7 +3545,9 @@ function init(){
 
   document.getElementById('session-pause-btn').addEventListener('click', toggleSessionPause);
   document.getElementById('resume-btn').addEventListener('click', ()=>{
-    showDay(getTodayKey());
+    const today = getTodayKey();
+    const target = DATA[today].rest ? (nextWorkoutKey() || today) : today;
+    showDay(target);
     updateNavStates();
     showTab('workout');
   });
