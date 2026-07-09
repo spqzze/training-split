@@ -571,6 +571,52 @@
   }
   .supp-actions button:hover{ color:var(--text); border-color:var(--text-faint); }
 
+  /* Habit tracker */
+  section.habits{
+    padding:32px 20px 36px;
+    border-top:1px solid var(--border);
+    margin-top:12px;
+  }
+  .supp-check.auto{ cursor:default; }
+  .habit-group{ margin-top:22px; }
+  .habit-group-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:10px;
+  }
+  .habit-group-name{
+    font-family:'Oswald',sans-serif;
+    font-size:16px;
+    font-weight:600;
+    text-transform:uppercase;
+  }
+  .habit-group-tools{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--text-dim);
+  }
+  .habit-group-tools button{
+    background:none;
+    border:1px solid var(--border-strong);
+    color:var(--text-faint);
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    padding:4px 8px;
+    cursor:pointer;
+  }
+  .habit-group-tools button:hover{ color:var(--text); border-color:var(--text-faint); }
+  .streak{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--steel);
+    white-space:nowrap;
+  }
+
   .reset-row{
     margin-top:24px;
     text-align:right;
@@ -642,6 +688,24 @@
     <div class="supp-actions">
       <button id="supp-add-btn">Add supplement</button>
       <button id="supp-reset-btn">Reset today</button>
+    </div>
+  </div>
+</section>
+
+<section class="habits">
+  <div class="wrap">
+    <div class="supp-head">
+      <div>
+        <div class="section-label">Daily habits</div>
+        <div class="section-title">Today's checklist</div>
+      </div>
+      <div class="supp-count" id="habit-count"></div>
+    </div>
+    <div id="gym-habit"></div>
+    <div id="habit-groups"></div>
+    <div class="supp-actions">
+      <button id="habit-add-group-btn">Add group</button>
+      <button id="habit-reset-btn">Reset today</button>
     </div>
   </div>
 </section>
@@ -1254,6 +1318,206 @@ function initSupplements(){
   });
 }
 
+// --- Daily habit tracker ---
+const HABIT_SEED_GROUPS = [
+  { id:"skincare", name:"Skincare", habits:[
+    { id:"skincare-am", name:"AM routine — cleanse, moisturize, SPF" },
+    { id:"skincare-pm", name:"PM routine — cleanse, treatment, moisturize" },
+  ]},
+];
+
+function getHabitDefs(){
+  try{
+    const stored = JSON.parse(localStorage.getItem('ledger-habit-defs'));
+    if(stored && stored.groups) return stored;
+  } catch(e){}
+  const seed = { groups: HABIT_SEED_GROUPS };
+  localStorage.setItem('ledger-habit-defs', JSON.stringify(seed));
+  return seed;
+}
+function saveHabitDefs(defs){
+  localStorage.setItem('ledger-habit-defs', JSON.stringify(defs));
+}
+function getHabitLog(){
+  try{ return JSON.parse(localStorage.getItem('ledger-habit-log')) || {}; }
+  catch(e){ return {}; }
+}
+function saveHabitLog(log){
+  localStorage.setItem('ledger-habit-log', JSON.stringify(log));
+}
+function isHabitDoneToday(id){
+  return !!(getHabitLog()[localDateStr()] || {})[id];
+}
+function setHabitToday(id, done){
+  const log = getHabitLog();
+  const today = localDateStr();
+  log[today] = log[today] || {};
+  if(done){ log[today][id] = true; } else { delete log[today][id]; }
+  saveHabitLog(log);
+}
+
+function habitStreak(id){
+  const log = getHabitLog();
+  const d = new Date();
+  if(!(log[localDateStr(d)] || {})[id]) d.setDate(d.getDate() - 1);
+  let streak = 0;
+  for(let i=0; i<365; i++){
+    if((log[localDateStr(d)] || {})[id]){ streak++; d.setDate(d.getDate() - 1); }
+    else break;
+  }
+  return streak;
+}
+
+function todayGymProgress(){
+  const key = getTodayKey();
+  const day = DATA[key];
+  if(!day || day.rest) return null;
+  const checks = getChecks();
+  const wk = weekKey();
+  let total = 0, done = 0;
+  day.exercises.forEach((ex, idx)=>{
+    const n = displaySets(ex);
+    total += n;
+    for(let i=0; i<n; i++){
+      const entry = checks[`${key}-${idx}-${i}`];
+      if(entry && entry.v && entry.wk === wk) done++;
+    }
+  });
+  return { title: day.title, total, done, complete: total > 0 && done === total };
+}
+
+function gymHabitHtml(){
+  const prog = todayGymProgress();
+  if(!prog){
+    return `<div class="supp-row">
+      <div class="supp-check auto">—</div>
+      <div class="supp-main">
+        <div class="supp-name">Gym<span class="opt">rest day</span></div>
+        <div class="supp-fields">No session scheduled today — recovery counts.</div>
+      </div>
+    </div>`;
+  }
+  return `<div class="supp-row ${prog.complete ? 'taken' : ''}">
+    <div class="supp-check auto">${prog.complete ? '✓' : ''}</div>
+    <div class="supp-main">
+      <div class="supp-name">Gym — ${escapeHtml(prog.title)}<span class="opt">auto</span></div>
+      <div class="supp-fields">${prog.done} / ${prog.total} sets — checks itself off when every set is done</div>
+    </div>
+  </div>`;
+}
+
+function habitRowHtml(habit){
+  const done = isHabitDoneToday(habit.id);
+  const streak = habitStreak(habit.id);
+  return `<div class="supp-row ${done ? 'taken' : ''}" data-habit="${escapeHtml(habit.id)}">
+    <div class="supp-check" title="Done today">${done ? '✓' : ''}</div>
+    <div class="supp-main">
+      <div class="supp-name">${escapeHtml(habit.name)}</div>
+      ${streak > 1 ? `<div class="supp-fields"><span class="streak">${streak}-day streak</span></div>` : ''}
+    </div>
+    <button class="supp-del" title="Remove habit">×</button>
+  </div>`;
+}
+
+function renderHabits(){
+  const gymEl = document.getElementById('gym-habit');
+  const groupsEl = document.getElementById('habit-groups');
+  if(!gymEl || !groupsEl) return;
+  const defs = getHabitDefs();
+
+  gymEl.innerHTML = gymHabitHtml();
+
+  groupsEl.innerHTML = defs.groups.map(group=>{
+    const doneCount = group.habits.filter(h=>isHabitDoneToday(h.id)).length;
+    return `<div class="habit-group" data-group="${escapeHtml(group.id)}">
+      <div class="habit-group-head">
+        <div class="habit-group-name">${escapeHtml(group.name)}</div>
+        <div class="habit-group-tools">
+          <span>${doneCount} / ${group.habits.length}</span>
+          <button class="habit-add-btn">+ habit</button>
+          <button class="habit-del-group-btn">× group</button>
+        </div>
+      </div>
+      ${group.habits.map(habitRowHtml).join('')}
+    </div>`;
+  }).join('');
+
+  updateHabitCount();
+}
+
+function updateHabitCount(){
+  const el = document.getElementById('habit-count');
+  if(!el) return;
+  const defs = getHabitDefs();
+  let total = 0, done = 0;
+  defs.groups.forEach(g=>g.habits.forEach(h=>{
+    total++;
+    if(isHabitDoneToday(h.id)) done++;
+  }));
+  const prog = todayGymProgress();
+  if(prog){
+    total++;
+    if(prog.complete) done++;
+  }
+  el.textContent = `${done} / ${total} done`;
+}
+
+function initHabits(){
+  const groupsEl = document.getElementById('habit-groups');
+  renderHabits();
+
+  groupsEl.addEventListener('click', e=>{
+    const defs = getHabitDefs();
+    const groupEl = e.target.closest('.habit-group');
+    if(!groupEl) return;
+    const group = defs.groups.find(g=>g.id === groupEl.dataset.group);
+    if(!group) return;
+
+    const row = e.target.closest('.supp-row[data-habit]');
+    if(row && e.target.closest('.supp-check')){
+      setHabitToday(row.dataset.habit, !row.classList.contains('taken'));
+      renderHabits();
+      return;
+    }
+    if(row && e.target.closest('.supp-del')){
+      group.habits = group.habits.filter(h=>h.id !== row.dataset.habit);
+      saveHabitDefs(defs);
+      renderHabits();
+      return;
+    }
+    if(e.target.closest('.habit-add-btn')){
+      const name = (prompt('Habit name:') || '').trim();
+      if(!name) return;
+      group.habits.push({ id: 'habit-' + Date.now(), name });
+      saveHabitDefs(defs);
+      renderHabits();
+      return;
+    }
+    if(e.target.closest('.habit-del-group-btn')){
+      if(!confirm(`Remove the "${group.name}" group and its habits?`)) return;
+      defs.groups = defs.groups.filter(g=>g.id !== group.id);
+      saveHabitDefs(defs);
+      renderHabits();
+    }
+  });
+
+  document.getElementById('habit-add-group-btn').addEventListener('click', ()=>{
+    const name = (prompt('Group name (e.g. Skincare, Reading, Mobility):') || '').trim();
+    if(!name) return;
+    const defs = getHabitDefs();
+    defs.groups.push({ id: 'group-' + Date.now(), name, habits: [] });
+    saveHabitDefs(defs);
+    renderHabits();
+  });
+
+  document.getElementById('habit-reset-btn').addEventListener('click', ()=>{
+    const log = getHabitLog();
+    delete log[localDateStr()];
+    saveHabitLog(log);
+    renderHabits();
+  });
+}
+
 // --- Data backup ---
 function exportData(){
   const data = {};
@@ -1293,6 +1557,7 @@ function init(){
   pruneOldChecks();
   initBodyweight();
   initSupplements();
+  initHabits();
   setInterval(tickSessionClock, 1000);
 
   const nav = document.getElementById('day-nav');
@@ -1334,6 +1599,7 @@ function init(){
 
         updateSessionProgress();
         handleExerciseCompletion(card, dayKey, idx, ex);
+        renderHabits();
       });
     });
 
@@ -1377,6 +1643,7 @@ function init(){
     localStorage.removeItem('ledger-checks');
     document.querySelectorAll('.set-box.done').forEach(b=>b.classList.remove('done'));
     updateSessionProgress();
+    renderHabits();
   });
 
   document.getElementById('reset-weights-btn').addEventListener('click', ()=>{
