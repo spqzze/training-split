@@ -105,7 +105,7 @@
     position:absolute;
     top:8px;
     left:0;
-    width:20%;
+    width:calc(100% / 6);
     height:32px;
     display:flex;
     justify-content:center;
@@ -1165,6 +1165,11 @@
         </div>
       </div>
 
+      <div class="card" id="dash-macros" role="button" tabindex="0" aria-label="Open Macros" style="cursor:pointer">
+        <div class="card-label">Macros <span class="mini">remaining today · tap to log</span></div>
+        <div class="kv-list" style="grid-template-columns:repeat(4, 1fr)" id="dash-macros-list"></div>
+      </div>
+
       <div class="card">
         <div class="card-label">Muscle volume <span class="mini">effective sets / week</span></div>
         <div class="vol-grid" id="vol-chart"></div>
@@ -1187,6 +1192,49 @@
     </div>
     <nav class="days" id="day-nav" aria-label="Training days"></nav>
     <div class="day-wrap"><div id="day-content"></div></div>
+  </div>
+</section>
+
+<!-- ================= MACROS ================= -->
+<section class="view" data-view="macros">
+  <div class="wrap">
+    <div class="view-head" style="padding-left:0;padding-right:0">
+      <div class="kicker">Macros</div>
+      <h1>Nutrition</h1>
+      <div class="sub">Local-only food log · goals live in Settings</div>
+    </div>
+    <div class="stagger">
+      <div class="grid-2 grid-row" id="macro-cards"></div>
+
+      <div class="card">
+        <div class="card-label">Remaining today</div>
+        <div class="kv-list" id="macro-remaining"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Quick meal <span class="mini">type what you ate</span></div>
+        <div style="display:flex;gap:10px">
+          <input class="note-input" id="meal-input" placeholder='e.g. "200g chicken, 1 cup rice"' aria-label="Meal description">
+          <button class="ghost-btn" id="meal-add-btn" style="flex:0 0 auto">Log</button>
+        </div>
+        <div class="empty-note" style="padding-top:8px">Smart meal parsing arrives in the next update — logged meals will appear below automatically.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Saved meals</div>
+        <div id="saved-meals"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Today's meals</div>
+        <div id="today-meals"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Daily summary</div>
+        <div class="kv-list" id="macro-summary"></div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -1268,6 +1316,26 @@
         <div class="set-line">
           <span class="k">Reset today's workout<span class="hint">unchecks today's sets and session timer</span></span>
           <button class="ghost-btn" id="btn-reset-today">Reset</button>
+        </div>
+      </div>
+
+      <div class="card set-group">
+        <div class="card-label">Macros <span class="mini">included in Export/Import backups</span></div>
+        <div class="set-line">
+          <span class="k">Calories goal</span>
+          <input class="weight-input" id="goal-calories" inputmode="numeric" aria-label="Calories goal">
+        </div>
+        <div class="set-line">
+          <span class="k">Protein goal <span class="hint">grams</span></span>
+          <input class="weight-input" id="goal-protein" inputmode="numeric" aria-label="Protein goal">
+        </div>
+        <div class="set-line">
+          <span class="k">Carbs goal <span class="hint">grams</span></span>
+          <input class="weight-input" id="goal-carbs" inputmode="numeric" aria-label="Carbs goal">
+        </div>
+        <div class="set-line">
+          <span class="k">Fat goal <span class="hint">grams</span></span>
+          <input class="weight-input" id="goal-fat" inputmode="numeric" aria-label="Fat goal">
         </div>
       </div>
 
@@ -1376,6 +1444,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 12h3M19 12h3M6 8v8M18 8v8M9 5v14M15 5v14M9 12h6"/></svg>
       Workout
     </button>
+    <button data-tab="macros" aria-label="Macros">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c.5 4-3.5 5.5-3.5 9.5a3.5 3.5 0 0 0 7 0c0-1.6-.8-2.8-1.5-3.5.2 2-1.5 2.6-1.5 2.6"/><path d="M12 3c4.5 3 6.5 6.5 6.5 10.5a6.5 6.5 0 0 1-13 0C5.5 9.5 7.5 6 12 3Z"/></svg>
+      Macros
+    </button>
     <button data-tab="progress" aria-label="Progress">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
       Progress
@@ -1401,7 +1473,7 @@
    ========================================================= */
 
 const APP_VERSION = '3.0.0';
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 /* ---------- Training data (source of truth for the plan) ---------- */
 const DATA = {
@@ -1486,7 +1558,7 @@ const DAY_NAMES = {
   fri:"Friday", sat:"Saturday", sun:"Sunday"
 };
 const DAY_ORDER = ['sun','mon','tue','wed','thu','fri','sat'];
-const TABS = ['dashboard','workout','progress','habits','settings'];
+const TABS = ['dashboard','workout','macros','progress','habits','settings'];
 const ACCENTS = { indigo:'#7c9aff', teal:'#4ecdc4', coral:'#ff8f70', violet:'#b78cff', gold:'#f5c26b' };
 
 /* =========================================================
@@ -1512,7 +1584,9 @@ function migrateStorage(){
   const KNOWN = ['ledger-checks','ledger-weights','ledger-reps','ledger-lastperf','ledger-pr',
     'ledger-mynotes','ledger-bodyweight','ledger-session','ledger-supp-defs','ledger-supp-log',
     'ledger-habit-defs','ledger-habit-log','ledger-workout-log','ledger-history',
-    'ledger-pr-history','ledger-session-log','ledger-settings'];
+    'ledger-pr-history','ledger-session-log','ledger-settings',
+    'ledger-macro-goals','ledger-macro-log','ledger-macro-saved','ledger-macro-foods',
+    'ledger-macro-settings','ledger-macro-analytics'];
   KNOWN.forEach(k=>{
     const raw = localStorage.getItem(k);
     if(raw === null) return;
@@ -1731,6 +1805,22 @@ function initSettingsView(){
   } else {
     offlineEl.textContent = location.protocol === 'https:' ? 'Unavailable' : 'Needs https hosting';
   }
+  // Macro goal inputs
+  const goals = getMacroGoals();
+  MACRO_DEFS.forEach(m=>{
+    const inp = document.getElementById(`goal-${m.id}`);
+    if(!inp) return;
+    inp.value = goals[m.id];
+    inp.addEventListener('input', ()=>{
+      const n = parseInt(inp.value, 10);
+      if(!isNaN(n) && n >= 0){
+        saveMacroGoals({ [m.id]: n });
+        renderMacros();
+        renderDashMacros();
+      }
+    });
+  });
+
   function updateNetStatus(){
     const el = document.getElementById('about-net');
     el.textContent = navigator.onLine ? '● Online' : '○ Offline — app still works';
@@ -2263,6 +2353,7 @@ function renderDashboard(){
   updateDashSupps();
   renderDashHabits();
   renderBodyweight();
+  renderDashMacros();
 }
 
 function updateDashSupps(){
@@ -3350,6 +3441,109 @@ function importData(file){
 }
 
 /* =========================================================
+   Macros (Phase 1: structure, storage, goals — no parsing yet)
+   ========================================================= */
+const MACRO_SCHEMA = 1;
+const MACRO_DEFAULT_GOALS = { calories:2800, protein:210, carbs:330, fat:80 };
+const MACRO_DEFS = [
+  { id:'calories', label:'Calories', unit:'kcal', cls:'' },
+  { id:'protein',  label:'Protein',  unit:'g',    cls:'good' },
+  { id:'carbs',    label:'Carbs',    unit:'g',    cls:'warn' },
+  { id:'fat',      label:'Fat',      unit:'g',    cls:'bad' },
+];
+
+// Seed every macro bucket once so backups always carry a complete,
+// versioned set of keys even before any meal is logged.
+function ensureMacroStorage(){
+  if(storeGet('ledger-macro-settings', null) === null) storeSet('ledger-macro-settings', { schema: MACRO_SCHEMA });
+  if(storeGet('ledger-macro-goals', null) === null) storeSet('ledger-macro-goals', MACRO_DEFAULT_GOALS);
+  if(storeGet('ledger-macro-log', null) === null) storeSet('ledger-macro-log', {});      // { 'YYYY-MM-DD': { meals:[], totals:{} } }
+  if(storeGet('ledger-macro-saved', null) === null) storeSet('ledger-macro-saved', []);  // reusable meals
+  if(storeGet('ledger-macro-foods', null) === null) storeSet('ledger-macro-foods', []);  // custom food definitions
+  if(storeGet('ledger-macro-analytics', null) === null) storeSet('ledger-macro-analytics', {}); // future trends/averages
+}
+
+function getMacroGoals(){ return Object.assign({}, MACRO_DEFAULT_GOALS, storeGet('ledger-macro-goals', {})); }
+function saveMacroGoals(patch){ storeSet('ledger-macro-goals', Object.assign(getMacroGoals(), patch)); }
+function getMacroLog(){ return storeGet('ledger-macro-log', {}); }
+function getMacroDay(dateStr){
+  const day = getMacroLog()[dateStr || localDateStr()];
+  return day || { meals:[], totals:{ calories:0, protein:0, carbs:0, fat:0 } };
+}
+function getSavedMeals(){ return storeGet('ledger-macro-saved', []); }
+
+function macroRemaining(){
+  const goals = getMacroGoals();
+  const t = getMacroDay().totals;
+  const out = {};
+  MACRO_DEFS.forEach(m=>{ out[m.id] = Math.max(0, (goals[m.id]||0) - Math.round(t[m.id]||0)); });
+  return out;
+}
+
+function renderMacros(){
+  const cardsEl = document.getElementById('macro-cards');
+  if(!cardsEl) return;
+  const goals = getMacroGoals();
+  const day = getMacroDay();
+  const t = day.totals;
+
+  cardsEl.innerHTML = MACRO_DEFS.map(m=>{
+    const eaten = Math.round(t[m.id]||0);
+    const goal = goals[m.id]||0;
+    const pct = goal ? Math.min(100, Math.round((eaten/goal)*100)) : 0;
+    return `<div class="card">
+      <div class="card-label">${m.label}</div>
+      <div class="stat-big" style="font-size:18px">${eaten}<span style="color:var(--faint);font-size:12px;font-weight:400"> / ${goal} ${m.unit}</span></div>
+      <div class="pill-track" style="margin-top:10px"><div class="pill-fill ${m.cls}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+
+  const rem = macroRemaining();
+  document.getElementById('macro-remaining').innerHTML = MACRO_DEFS.map(m=>
+    `<div><div class="kv-k">${m.label}</div><div class="kv-v">${rem[m.id]} ${m.unit}</div></div>`
+  ).join('');
+
+  const saved = getSavedMeals();
+  document.getElementById('saved-meals').innerHTML = saved.length
+    ? saved.map(s=>`<div class="pr-line"><span class="who"><span>${escapeHtml(s.name)}</span></span><span class="what">${Math.round(s.calories||0)} kcal · P${Math.round(s.protein||0)} C${Math.round(s.carbs||0)} F${Math.round(s.fat||0)}</span></div>`).join('')
+    : `<div class="empty-note">No saved meals yet — once logging lands, save any meal here for one-tap reuse.</div>`;
+
+  document.getElementById('today-meals').innerHTML = day.meals.length
+    ? day.meals.map(m=>`<div class="pr-line"><span class="who"><span>${escapeHtml(m.name)}</span></span><span class="what">${Math.round(m.calories||0)} kcal · P${Math.round(m.protein||0)} C${Math.round(m.carbs||0)} F${Math.round(m.fat||0)}</span><span class="when">${escapeHtml(m.time||'')}</span></div>`).join('')
+    : `<div class="empty-note">Nothing logged yet today.</div>`;
+
+  const calPct = goals.calories ? Math.round(((t.calories||0)/goals.calories)*100) : 0;
+  const proPct = goals.protein ? Math.round(((t.protein||0)/goals.protein)*100) : 0;
+  document.getElementById('macro-summary').innerHTML = `
+    <div><div class="kv-k">Meals logged</div><div class="kv-v">${day.meals.length}</div></div>
+    <div><div class="kv-k">Calories</div><div class="kv-v">${Math.round(t.calories||0)} · ${calPct}%</div></div>
+    <div><div class="kv-k">Protein</div><div class="kv-v">${Math.round(t.protein||0)}g · ${proPct}%</div></div>
+    <div><div class="kv-k">Carbs / Fat</div><div class="kv-v">${Math.round(t.carbs||0)}g / ${Math.round(t.fat||0)}g</div></div>`;
+}
+
+function renderDashMacros(){
+  const el = document.getElementById('dash-macros-list');
+  if(!el) return;
+  const rem = macroRemaining();
+  el.innerHTML = MACRO_DEFS.map(m=>
+    `<div><div class="kv-k">${m.id === 'calories' ? 'kcal' : m.label}</div><div class="kv-v" style="font-size:13px">${rem[m.id]}</div></div>`
+  ).join('');
+}
+
+function initMacros(){
+  document.getElementById('dash-macros').addEventListener('click', ()=>showTab('macros'));
+  document.getElementById('dash-macros').addEventListener('keydown', e=>{
+    if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); showTab('macros'); }
+  });
+  document.getElementById('meal-add-btn').addEventListener('click', ()=>{
+    showToast('Meal logging arrives in the next update', 'info');
+  });
+  document.getElementById('meal-input').addEventListener('keydown', e=>{
+    if(e.key === 'Enter') showToast('Meal logging arrives in the next update', 'info');
+  });
+}
+
+/* =========================================================
    Tabs + swipe navigation
    ========================================================= */
 let activeTab = 'dashboard';
@@ -3361,6 +3555,7 @@ function showTab(name){
   const idx = TABS.indexOf(name);
   document.getElementById('tab-ind').style.transform = `translateX(${idx*100}%)`;
   if(name === 'dashboard') renderDashboard();
+  if(name === 'macros') renderMacros();
   if(name === 'progress') renderProgress();
   if(name === 'habits'){ renderSupplements(); renderHabits(); }
   window.scrollTo({ top:0, behavior:'instant' in window ? 'instant' : 'auto' });
@@ -3426,6 +3621,7 @@ function updateNavStates(){
    ========================================================= */
 function init(){
   migrateStorage();
+  ensureMacroStorage();
   applySettings();
   pruneOldChecks();
 
@@ -3437,6 +3633,8 @@ function init(){
   initSupplements();
   initHabits();
   initSettingsView();
+  initMacros();
+  renderDashMacros();
   initRestSheet();
   initConfirmSheet();
   initChartTooltips(document.getElementById('progress-body'));
