@@ -2,8 +2,8 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#15140f">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1116">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,242 +13,139 @@
 <title>Ledger — Training Split</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg: #15140f;
-    --surface: #1d1c16;
-    --surface-2: #26241c;
-    --border: #38352a;
-    --border-strong: #4a4636;
-    --text: #f0ece0;
-    --text-dim: #a8a290;
-    --text-faint: #746e5c;
-    --rust: #c1503f;
-    --rust-dim: #7a3a30;
-    --steel: #7e97a1;
-    --steel-dim: #3e4f56;
-    --plate: #b8b2a0;
+    --bg: #0e1116;
+    --card: #161a21;
+    --card-2: #1d222b;
+    --border: #232a35;
+    --border-strong: #303948;
+    --text: #e9edf3;
+    --dim: #9aa3b2;
+    --faint: #5d6675;
+    --accent: #7c9aff;
+    --accent-soft: rgba(124,154,255,0.14);
+    --good: #3ecf8e;
+    --good-soft: rgba(62,207,142,0.13);
+    --warn: #f5c26b;
+    --warn-soft: rgba(245,194,107,0.13);
+    --bad: #f07a7a;
+    --bad-soft: rgba(240,122,122,0.13);
+    --r: 16px;
+    --r-sm: 10px;
+    --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 10px 30px rgba(0,0,0,0.22);
   }
-  *{ box-sizing:border-box; margin:0; padding:0; }
+  *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html{ touch-action:manipulation; }
   body{
     background:var(--bg);
     color:var(--text);
     font-family:'Inter',sans-serif;
     line-height:1.5;
-    padding-bottom:80px;
+    padding-bottom:90px;
   }
-  ::selection{ background:var(--rust); color:#fff; }
+  ::selection{ background:var(--accent); color:#0b0e13; }
+  button{ font-family:inherit; }
 
-  .wrap{ max-width:760px; margin:0 auto; padding:0 20px; }
+  .wrap{ max-width:680px; margin:0 auto; padding:0 16px; }
 
-  header.hero{
-    padding:56px 20px 32px;
-    border-bottom:1px solid var(--border);
-  }
-  .eyebrow{
-    font-family:'JetBrains Mono',monospace;
-    font-size:12px;
-    letter-spacing:0.12em;
-    color:var(--rust);
-    text-transform:uppercase;
-    margin-bottom:10px;
-  }
-  h1{
+  /* ---------- Header ---------- */
+  header.hero{ padding:28px 16px 10px; }
+  .brand{
     font-family:'Oswald',sans-serif;
     font-weight:700;
-    font-size:44px;
-    letter-spacing:0.01em;
+    font-size:13px;
+    letter-spacing:0.22em;
     text-transform:uppercase;
-    line-height:1.02;
+    color:var(--accent);
   }
-  .hero p{
-    color:var(--text-dim);
-    font-size:15px;
-    margin-top:10px;
-    max-width:480px;
+  h1{
+    font-size:26px;
+    font-weight:700;
+    letter-spacing:-0.02em;
+    margin-top:4px;
+  }
+  .hero .sub{
+    color:var(--faint);
+    font-size:13px;
+    margin-top:2px;
   }
   .bw-row{
     display:flex;
     align-items:center;
-    flex-wrap:wrap;
     gap:10px;
-    margin-top:20px;
-    font-family:'JetBrains Mono',monospace;
+    margin-top:16px;
   }
-  .bw-row .section-label{ margin-bottom:0; }
-  .bw-input{ width:70px; }
-  .bw-hint{ font-size:11px; color:var(--text-faint); }
+  .bw-row .field-label{ margin-bottom:0; }
+  .bw-input{ width:76px; }
+  .bw-hint{ font-size:12px; color:var(--faint); }
 
-  /* Volume chart */
-  section.volume{
-    padding:32px 20px 36px;
-    border-bottom:1px solid var(--border);
-  }
-  .section-label{
-    font-family:'JetBrains Mono',monospace;
+  .field-label{
     font-size:11px;
-    letter-spacing:0.1em;
-    text-transform:uppercase;
-    color:var(--text-faint);
-    margin-bottom:4px;
-  }
-  .section-title{
-    font-family:'Oswald',sans-serif;
-    font-size:20px;
     font-weight:600;
+    letter-spacing:0.08em;
     text-transform:uppercase;
-    margin-bottom:18px;
+    color:var(--faint);
   }
-  .vol-row{
-    display:grid;
-    grid-template-columns:110px 1fr 46px;
-    align-items:center;
-    gap:12px;
+
+  /* ---------- Cards ---------- */
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--r);
+    box-shadow:var(--shadow);
+    padding:16px;
+  }
+  .card-label{
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--faint);
     margin-bottom:10px;
   }
-  .vol-name{
-    font-size:13px;
-    color:var(--text-dim);
+
+  /* ---------- Dashboard ---------- */
+  section.dash{ padding:16px 16px 4px; }
+  .dash-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
   }
-  .vol-track{
-    position:relative;
-    height:16px;
-    background:var(--surface);
-    border:1px solid var(--border);
-  }
-  .vol-zone{
-    position:absolute;
-    top:0; bottom:0;
-    background:rgba(126,151,161,0.16);
-    border-left:1px dashed var(--border-strong);
-    border-right:1px dashed var(--border-strong);
-  }
-  .vol-fill{
-    position:absolute; top:0; bottom:0; left:0;
-    background:var(--rust-dim);
-  }
-  .vol-fill.in-zone{ background:var(--steel-dim); }
-  .vol-count{
-    font-family:'JetBrains Mono',monospace;
-    font-size:13px;
-    text-align:right;
-    color:var(--text-dim);
-  }
-  .vol-legend{
-    margin-top:14px;
-    font-family:'JetBrains Mono',monospace;
-    font-size:11px;
-    color:var(--text-faint);
+  .dash-grid .wide{ grid-column:1 / -1; }
+
+  .dash-today-row{
     display:flex;
-    gap:18px;
+    align-items:center;
+    gap:14px;
     flex-wrap:wrap;
   }
-  .vol-legend span{ display:inline-flex; align-items:center; gap:6px; }
-  .swatch{ width:9px; height:9px; display:inline-block; }
-
-  /* Day nav */
-  nav.days{
-    position:sticky; top:0; z-index:10;
-    background:var(--bg);
-    border-bottom:1px solid var(--border);
-    display:flex;
-    overflow-x:auto;
-    scrollbar-width:none;
+  .ring-wrap{ position:relative; width:58px; height:58px; flex:0 0 auto; }
+  .ring-wrap svg{ transform:rotate(-90deg); }
+  .ring-track{ fill:none; stroke:var(--border); stroke-width:5; }
+  .ring-fill{
+    fill:none;
+    stroke:var(--accent);
+    stroke-width:5;
+    stroke-linecap:round;
+    transition:stroke-dashoffset 0.35s ease, stroke 0.35s ease;
   }
-  nav.days::-webkit-scrollbar{ display:none; }
-  nav.days button{
-    flex:0 0 auto;
-    background:none;
-    border:none;
-    border-bottom:2px solid transparent;
-    color:var(--text-faint);
+  .ring-wrap.done .ring-fill{ stroke:var(--good); }
+  .ring-pct{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
     font-family:'JetBrains Mono',monospace;
     font-size:12px;
-    letter-spacing:0.06em;
-    text-transform:uppercase;
-    padding:14px 16px;
-    cursor:pointer;
-    white-space:nowrap;
+    color:var(--dim);
   }
-  nav.days button.active{
-    color:var(--text);
-    border-bottom-color:var(--rust);
-  }
-
-  /* Day content */
-  .day{ display:none; padding:28px 20px 8px; }
-  .day.active{ display:block; }
-
-  .day-head{
-    display:flex;
-    align-items:baseline;
-    justify-content:space-between;
-    margin-bottom:6px;
-  }
-  .day-head h2{
-    font-family:'Oswald',sans-serif;
-    font-size:24px;
-    text-transform:uppercase;
-    font-weight:600;
-  }
-  .day-sub{
-    font-family:'JetBrains Mono',monospace;
-    font-size:12px;
-    color:var(--text-faint);
-  }
-  .readiness{
-    margin:14px 0 20px;
-    padding:10px 14px;
-    background:var(--surface);
-    border-left:2px solid var(--steel);
+  .dash-today-main{ flex:1; min-width:120px; }
+  .dash-title{ font-size:17px; font-weight:600; }
+  .dash-sub{
     font-size:13px;
-    color:var(--text-dim);
-  }
-  .rest-day{
-    padding:60px 0;
-    text-align:center;
-    color:var(--text-faint);
-  }
-  .rest-day .big{
-    font-family:'Oswald',sans-serif;
-    font-size:28px;
-    text-transform:uppercase;
-    color:var(--text-dim);
-    margin-bottom:8px;
-  }
-
-  /* Session bar: progress + timer */
-  .session-bar{
-    display:flex;
-    flex-wrap:wrap;
-    align-items:flex-end;
-    justify-content:space-between;
-    gap:16px;
-    padding:14px 16px;
-    margin-bottom:18px;
-    background:var(--surface);
-    border:1px solid var(--border);
-  }
-  .session-progress{ flex:1; min-width:180px; }
-  .progress-row{
-    display:flex;
-    justify-content:space-between;
+    color:var(--dim);
     font-family:'JetBrains Mono',monospace;
-    font-size:12px;
-    color:var(--text-dim);
-    margin-bottom:6px;
-  }
-  .progress-track{
-    position:relative;
-    height:8px;
-    background:var(--bg);
-    border:1px solid var(--border);
-  }
-  .progress-fill{
-    position:absolute; top:0; bottom:0; left:0;
-    background:var(--steel-dim);
-    transition:width 0.2s ease;
+    margin-top:1px;
   }
   .session-timer{
     display:flex;
@@ -258,276 +155,465 @@
   .timer-clock{
     font-family:'JetBrains Mono',monospace;
     font-size:20px;
-    color:var(--text);
+    font-weight:500;
   }
   .session-timer button{
-    background:none;
+    background:var(--card-2);
     border:1px solid var(--border-strong);
-    color:var(--text-dim);
-    font-family:'JetBrains Mono',monospace;
-    font-size:11px;
-    padding:5px 10px;
+    color:var(--dim);
+    font-size:12px;
+    font-weight:600;
+    padding:6px 12px;
+    border-radius:999px;
     cursor:pointer;
   }
   .session-timer button:disabled{ opacity:0.4; cursor:default; }
 
-  .exercise{
-    border:1px solid var(--border);
-    background:var(--surface);
-    margin-bottom:12px;
+  .stat-big{
+    font-family:'JetBrains Mono',monospace;
+    font-size:22px;
+    font-weight:600;
+    line-height:1.2;
   }
-  .exercise.myo{ border-left:2px solid var(--rust); }
-  .exercise.superset{ border-left:2px solid var(--steel); }
+  .stat-sub{ font-size:12px; color:var(--dim); margin-top:2px; }
+  .stat-row{ margin-top:10px; }
+  .streak-tag[hidden]{ display:none; }
+  .streak-tag{
+    display:inline-block;
+    margin-top:10px;
+    font-size:12px;
+    font-weight:600;
+    color:var(--good);
+    background:var(--good-soft);
+    border-radius:999px;
+    padding:3px 10px;
+  }
 
+  .pill-track{
+    height:8px;
+    border-radius:999px;
+    background:var(--card-2);
+    overflow:hidden;
+    margin-top:12px;
+  }
+  .pill-fill{
+    height:100%;
+    border-radius:999px;
+    background:var(--accent);
+    transition:width 0.3s ease;
+  }
+  .pill-fill.done{ background:var(--good); }
+
+  /* Volume chart */
+  .vol-row{
+    display:grid;
+    grid-template-columns:96px 1fr 34px;
+    align-items:center;
+    gap:12px;
+    margin-bottom:9px;
+  }
+  .vol-name{ font-size:13px; color:var(--dim); }
+  .vol-track{
+    position:relative;
+    height:10px;
+    background:var(--card-2);
+    border-radius:999px;
+    overflow:hidden;
+  }
+  .vol-zone{
+    position:absolute;
+    top:0; bottom:0;
+    background:rgba(124,154,255,0.08);
+  }
+  .vol-fill{
+    position:absolute; top:0; bottom:0; left:0;
+    border-radius:999px;
+    background:var(--warn);
+  }
+  .vol-fill.in-zone{ background:var(--good); }
+  .vol-fill.over{ background:var(--bad); }
+  .vol-count{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12.5px;
+    text-align:right;
+    color:var(--dim);
+  }
+  .vol-legend{
+    margin-top:12px;
+    font-size:11.5px;
+    color:var(--faint);
+    display:flex;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  .vol-legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .swatch{ width:9px; height:9px; border-radius:3px; display:inline-block; }
+
+  /* ---------- Day nav ---------- */
+  nav.days{
+    position:sticky; top:0; z-index:10;
+    background:rgba(14,17,22,0.85);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    scrollbar-width:none;
+    padding:12px 16px;
+  }
+  nav.days::-webkit-scrollbar{ display:none; }
+  nav.days button{
+    flex:0 0 auto;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:999px;
+    color:var(--dim);
+    font-size:13px;
+    font-weight:600;
+    padding:8px 14px;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  }
+  nav.days button .pill-icon{ font-size:11px; }
+  nav.days button .pill-icon.check{ color:var(--good); }
+  nav.days button .pill-icon.rest{ color:var(--faint); }
+  nav.days button.today{ border-color:var(--border-strong); }
+  nav.days button.active{
+    background:var(--accent-soft);
+    border-color:var(--accent);
+    color:var(--accent);
+  }
+
+  /* ---------- Day content ---------- */
+  .day{ display:none; padding:16px 16px 8px; }
+  .day.active{ display:block; }
+
+  .day-head{ margin-bottom:12px; }
+  .day-head h2{ font-size:20px; font-weight:700; letter-spacing:-0.01em; }
+  .day-sub{ font-size:13px; color:var(--faint); }
+
+  .day-progress{ margin-bottom:14px; }
+  .progress-row{
+    display:flex;
+    justify-content:space-between;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--dim);
+    margin-bottom:6px;
+  }
+  .progress-track{
+    height:8px;
+    border-radius:999px;
+    background:var(--card);
+    border:1px solid var(--border);
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    border-radius:999px;
+    background:var(--accent);
+    transition:width 0.25s ease, background 0.25s ease;
+  }
+  .progress-fill.done{ background:var(--good); }
+
+  .readiness{
+    margin:0 0 14px;
+    padding:10px 14px;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--r-sm);
+    font-size:13px;
+    color:var(--dim);
+  }
+  .rest-day{
+    padding:56px 0;
+    text-align:center;
+    color:var(--faint);
+  }
+  .rest-day .big{
+    font-size:22px;
+    font-weight:700;
+    color:var(--dim);
+    margin-bottom:6px;
+  }
+
+  /* ---------- Exercise cards ---------- */
+  .exercise{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--r);
+    box-shadow:var(--shadow);
+    padding:14px 16px;
+    margin-bottom:12px;
+    transition:border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+  }
+  .exercise.complete{
+    border-color:rgba(62,207,142,0.45);
+    box-shadow:0 0 0 1px rgba(62,207,142,0.18), var(--shadow);
+    opacity:0.82;
+  }
   .ex-top{
     display:flex;
     align-items:flex-start;
     justify-content:space-between;
     gap:12px;
-    padding:14px 16px 10px;
   }
-  .ex-name{
-    font-family:'Oswald',sans-serif;
-    font-size:17px;
-    font-weight:600;
-    text-transform:uppercase;
-  }
+  .ex-name{ font-size:15.5px; font-weight:600; }
   .ex-tag{
-    font-family:'JetBrains Mono',monospace;
-    font-size:10px;
-    letter-spacing:0.06em;
+    font-size:10.5px;
+    font-weight:600;
+    letter-spacing:0.05em;
     text-transform:uppercase;
-    padding:3px 7px;
-    border:1px solid var(--rust-dim);
-    color:var(--rust);
+    padding:3px 9px;
+    border-radius:999px;
+    background:var(--accent-soft);
+    color:var(--accent);
     white-space:nowrap;
   }
-  .ex-data{
+  .exercise.myo .ex-tag{ background:var(--warn-soft); color:var(--warn); }
+
+  .ex-rx{
     display:flex;
     flex-wrap:wrap;
     align-items:center;
-    gap:8px 18px;
-    padding:0 16px 12px;
+    gap:6px 14px;
+    margin-top:6px;
     font-family:'JetBrains Mono',monospace;
     font-size:13px;
-    color:var(--text-dim);
+    color:var(--dim);
   }
-  .ex-data b{ color:var(--text); font-weight:500; }
+  .ex-rx b{ color:var(--text); font-weight:500; }
+  .rx-meta{ color:var(--faint); font-size:12px; }
+
   .weight-input{
-    width:66px;
-    background:var(--bg);
+    width:70px;
+    background:var(--card-2);
     border:1px solid var(--border-strong);
     color:var(--text);
     font-family:'JetBrains Mono',monospace;
     font-size:13px;
     font-weight:500;
-    padding:2px 6px;
-    border-radius:2px;
+    padding:4px 8px;
+    border-radius:8px;
   }
-  .weight-input::placeholder{ color:var(--text-faint); font-weight:400; }
-  .weight-input:focus{ outline:none; border-color:var(--rust); }
-  .ex-note{
-    padding:0 16px 14px;
-    font-size:12.5px;
-    color:var(--text-faint);
-    border-top:1px solid var(--border);
-    padding-top:10px;
-    margin-top:2px;
-  }
-  .ex-note strong{ color:var(--text-dim); }
+  .weight-input::placeholder{ color:var(--faint); font-weight:400; }
+  .weight-input:focus{ outline:none; border-color:var(--accent); }
 
-  /* Last performance + PR */
   .perf-info{
-    margin:0 16px 12px;
-    font-family:'JetBrains Mono',monospace;
-    font-size:12px;
+    margin-top:10px;
     display:flex;
     flex-wrap:wrap;
-    gap:10px;
+    gap:8px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px;
   }
   .last-perf{
-    color:var(--text-dim);
-    padding:8px 12px;
-    background:var(--surface-2);
-    border-left:2px solid var(--border-strong);
+    color:var(--dim);
+    padding:5px 10px;
+    background:var(--card-2);
+    border-radius:999px;
   }
-  .perf-date{ color:var(--text-faint); }
+  .perf-date{ color:var(--faint); }
   .pr-badge{
-    color:var(--plate);
-    padding:8px 12px;
-    background:var(--surface-2);
-    border-left:2px solid var(--plate);
-    align-self:flex-start;
+    color:var(--warn);
+    padding:5px 10px;
+    background:var(--warn-soft);
+    border-radius:999px;
   }
   .pr-badge.flash{ animation:pr-flash 0.6s ease 2; }
   @keyframes pr-flash{
-    0%,100%{ background:var(--surface-2); }
-    50%{ background:var(--rust-dim); }
+    0%,100%{ background:var(--warn-soft); }
+    50%{ background:var(--warn); color:#0b0e13; }
   }
 
   .progression{
-    margin:0 16px 12px;
+    margin-top:10px;
     padding:8px 12px;
     font-size:12px;
-    font-family:'JetBrains Mono',monospace;
-    border-left:2px solid var(--steel);
-    background:var(--surface-2);
-    color:var(--text-dim);
+    border-radius:var(--r-sm);
+    background:var(--good-soft);
+    color:var(--good);
   }
-  .progression.down{ border-left-color:var(--rust); }
-  .progression.hold{ border-left-color:var(--plate); }
-
-  /* Personal note */
-  .my-note{ padding:0 16px 12px; }
-  .note-input{
-    width:100%;
-    background:var(--bg);
-    border:1px solid var(--border-strong);
-    color:var(--text);
-    font-family:'JetBrains Mono',monospace;
-    font-size:12.5px;
-    padding:6px 10px;
-    border-radius:2px;
-  }
-  .note-input::placeholder{ color:var(--text-faint); }
-  .note-input:focus{ outline:none; border-color:var(--rust); }
+  .progression.hold{ background:var(--warn-soft); color:var(--warn); }
+  .progression.down{ background:var(--bad-soft); color:var(--bad); }
 
   .sets{
     display:flex;
     gap:10px;
-    padding:0 16px 14px;
+    margin-top:12px;
     flex-wrap:wrap;
   }
   .set-unit{
     display:flex;
     flex-direction:column;
     align-items:center;
-    gap:4px;
+    gap:5px;
   }
   .set-box{
-    width:26px; height:26px;
-    border:1px solid var(--border-strong);
-    background:var(--bg);
-    color:var(--text-faint);
-    font-family:'JetBrains Mono',monospace;
-    font-size:11px;
-    display:flex; align-items:center; justify-content:center;
-    cursor:pointer;
-    user-select:none;
-  }
-  .set-box.done{
-    background:var(--rust-dim);
-    border-color:var(--rust);
-    color:var(--text);
-  }
-  .reps-input{
-    width:26px;
-    height:20px;
-    text-align:center;
-    background:var(--bg);
-    border:1px solid var(--border-strong);
-    color:var(--text);
-    font-family:'JetBrains Mono',monospace;
-    font-size:10px;
-    padding:0;
-    border-radius:2px;
-  }
-  .reps-input::placeholder{ color:var(--text-faint); }
-  .reps-input:focus{ outline:none; border-color:var(--rust); }
-
-  .rest-timer{ padding:0 16px 16px; }
-  .timer-btn{
-    background:var(--surface-2);
-    border:1px solid var(--border-strong);
-    color:var(--text-dim);
-    font-family:'JetBrains Mono',monospace;
-    font-size:11.5px;
-    padding:6px 10px;
-    cursor:pointer;
-    border-radius:2px;
-  }
-  .timer-btn.running{ color:var(--text); border-color:var(--steel); }
-  .timer-btn.done{ color:var(--text); border-color:var(--rust); background:var(--rust-dim); }
-
-  footer.notes{
-    padding:36px 20px 60px;
-    border-top:1px solid var(--border);
-    margin-top:12px;
-  }
-  .notes ul{
-    list-style:none;
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-  }
-  .notes li{
-    font-size:13.5px;
-    color:var(--text-dim);
-    padding-left:16px;
-    position:relative;
-  }
-  .notes li::before{
-    content:"—";
-    position:absolute;
-    left:0;
-    color:var(--rust);
-  }
-
-  /* Supplement tracker */
-  section.supps{
-    padding:32px 20px 36px;
-    border-top:1px solid var(--border);
-    margin-top:12px;
-  }
-  .supp-head{
-    display:flex;
-    align-items:baseline;
-    justify-content:space-between;
-    gap:12px;
-  }
-  .supp-count{
-    font-family:'JetBrains Mono',monospace;
-    font-size:12px;
-    color:var(--text-dim);
-  }
-  .supp-row{
-    display:flex;
-    align-items:flex-start;
-    gap:12px;
-    border:1px solid var(--border);
-    background:var(--surface);
-    padding:12px 14px;
-    margin-bottom:10px;
-  }
-  .supp-check{
-    flex:0 0 auto;
-    width:26px; height:26px;
-    margin-top:2px;
-    border:1px solid var(--border-strong);
-    background:var(--bg);
-    color:var(--text-faint);
+    width:36px; height:36px;
+    border-radius:999px;
+    border:1.5px solid var(--border-strong);
+    background:var(--card-2);
+    color:var(--dim);
     font-family:'JetBrains Mono',monospace;
     font-size:13px;
     display:flex; align-items:center; justify-content:center;
     cursor:pointer;
     user-select:none;
+    transition:background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
   }
-  .supp-row.taken .supp-check{
-    background:var(--rust-dim);
-    border-color:var(--rust);
-    color:var(--text);
-  }
-  .supp-main{ flex:1; min-width:0; }
-  .supp-name{
-    font-family:'Oswald',sans-serif;
-    font-size:15px;
+  .set-box:active{ transform:scale(0.92); }
+  .set-box.done{
+    background:var(--good);
+    border-color:var(--good);
+    color:#0b0e13;
     font-weight:600;
-    text-transform:uppercase;
+    animation:pop 0.25s ease;
   }
-  .supp-name .opt{
+  @keyframes pop{
+    0%{ transform:scale(0.85); }
+    60%{ transform:scale(1.12); }
+    100%{ transform:scale(1); }
+  }
+  .reps-input{
+    width:34px;
+    height:24px;
+    text-align:center;
+    background:var(--card-2);
+    border:1px solid var(--border);
+    color:var(--text);
     font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    padding:0;
+    border-radius:8px;
+  }
+  .reps-input::placeholder{ color:var(--faint); }
+  .reps-input:focus{ outline:none; border-color:var(--accent); }
+
+  .rest-timer{ margin-top:12px; }
+  .timer-btn{
+    background:var(--card-2);
+    border:1px solid var(--border-strong);
+    color:var(--dim);
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    padding:7px 14px;
+    cursor:pointer;
+    border-radius:999px;
+    transition:border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+  }
+  .timer-btn.running{ color:var(--accent); border-color:var(--accent); }
+  .timer-btn.done{ color:#0b0e13; border-color:var(--good); background:var(--good); }
+
+  details.ex-notes{ margin-top:12px; }
+  details.ex-notes summary{
+    list-style:none;
+    cursor:pointer;
+    font-size:12px;
+    font-weight:600;
+    color:var(--faint);
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    user-select:none;
+  }
+  details.ex-notes summary::-webkit-details-marker{ display:none; }
+  details.ex-notes summary::before{
+    content:"›";
+    display:inline-block;
+    transition:transform 0.2s ease;
+  }
+  details.ex-notes[open] summary::before{ transform:rotate(90deg); }
+  .ex-note{
+    margin-top:8px;
+    font-size:12.5px;
+    color:var(--dim);
+    background:var(--card-2);
+    border-radius:var(--r-sm);
+    padding:8px 12px;
+  }
+  .ex-note strong{ color:var(--text); font-weight:600; }
+  .my-note{ margin-top:8px; }
+  .note-input{
+    width:100%;
+    background:var(--card-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-size:12.5px;
+    padding:8px 12px;
+    border-radius:var(--r-sm);
+  }
+  .note-input::placeholder{ color:var(--faint); }
+  .note-input:focus{ outline:none; border-color:var(--accent); }
+
+  /* ---------- Supplements & habits ---------- */
+  section.supps, section.habits{ padding:20px 16px 4px; }
+  .supp-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:12px;
+  }
+  .section-title{ font-size:18px; font-weight:700; letter-spacing:-0.01em; }
+  .section-label{
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--faint);
+    margin-bottom:2px;
+  }
+  .supp-count{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12.5px;
+    color:var(--dim);
+  }
+  .supp-row{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--r);
+    box-shadow:var(--shadow);
+    padding:12px 14px;
+    margin-bottom:10px;
+    transition:border-color 0.25s ease;
+  }
+  .supp-row.taken{ border-color:rgba(62,207,142,0.4); }
+  .supp-check{
+    flex:0 0 auto;
+    width:28px; height:28px;
+    margin-top:2px;
+    border-radius:999px;
+    border:1.5px solid var(--border-strong);
+    background:var(--card-2);
+    color:var(--faint);
+    font-size:13px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    user-select:none;
+    transition:background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+  }
+  .supp-check:active{ transform:scale(0.9); }
+  .supp-row.taken .supp-check{
+    background:var(--good);
+    border-color:var(--good);
+    color:#0b0e13;
+    animation:pop 0.25s ease;
+  }
+  .supp-check.auto{ cursor:default; }
+  .supp-main{ flex:1; min-width:0; }
+  .supp-name{ font-size:14px; font-weight:600; }
+  .supp-name .opt{
     font-size:10px;
-    color:var(--text-faint);
+    font-weight:600;
+    color:var(--faint);
     text-transform:uppercase;
     letter-spacing:0.06em;
     margin-left:8px;
@@ -537,9 +623,8 @@
     flex-wrap:wrap;
     gap:8px 14px;
     margin-top:6px;
-    font-family:'JetBrains Mono',monospace;
     font-size:11px;
-    color:var(--text-faint);
+    color:var(--faint);
   }
   .supp-fields label{
     display:inline-flex;
@@ -547,45 +632,39 @@
     gap:6px;
   }
   .supp-dose{ width:150px; }
-  .supp-time{ width:80px; }
+  .supp-time{ width:84px; }
   .supp-notes{ width:170px; }
   .supp-del{
     flex:0 0 auto;
     background:none;
-    border:1px solid var(--border-strong);
-    color:var(--text-faint);
-    font-family:'JetBrains Mono',monospace;
-    font-size:11px;
-    width:24px; height:24px;
+    border:1px solid var(--border);
+    color:var(--faint);
+    font-size:12px;
+    width:26px; height:26px;
     margin-top:3px;
+    border-radius:999px;
     cursor:pointer;
   }
-  .supp-del:hover{ color:var(--rust); border-color:var(--rust-dim); }
+  .supp-del:hover{ color:var(--bad); border-color:var(--bad); }
   .supp-actions{
     display:flex;
     justify-content:flex-end;
     gap:10px;
-    margin-top:14px;
+    margin-top:4px;
   }
-  .supp-actions button{
-    background:none;
-    border:1px solid var(--border-strong);
-    color:var(--text-faint);
-    font-family:'JetBrains Mono',monospace;
-    font-size:11px;
-    padding:6px 10px;
+  .supp-actions button, .reset-row button{
+    background:var(--card);
+    border:1px solid var(--border);
+    color:var(--dim);
+    font-size:12px;
+    font-weight:600;
+    padding:7px 13px;
+    border-radius:999px;
     cursor:pointer;
   }
-  .supp-actions button:hover{ color:var(--text); border-color:var(--text-faint); }
+  .supp-actions button:hover, .reset-row button:hover{ color:var(--text); border-color:var(--border-strong); }
 
-  /* Habit tracker */
-  section.habits{
-    padding:32px 20px 36px;
-    border-top:1px solid var(--border);
-    margin-top:12px;
-  }
-  .supp-check.auto{ cursor:default; }
-  .habit-group{ margin-top:22px; }
+  .habit-group{ margin-top:20px; }
   .habit-group-head{
     display:flex;
     align-items:baseline;
@@ -593,59 +672,120 @@
     gap:12px;
     margin-bottom:10px;
   }
-  .habit-group-name{
-    font-family:'Oswald',sans-serif;
-    font-size:16px;
-    font-weight:600;
-    text-transform:uppercase;
-  }
+  .habit-group-name{ font-size:14.5px; font-weight:700; }
   .habit-group-tools{
     display:flex;
     align-items:center;
     gap:8px;
     font-family:'JetBrains Mono',monospace;
-    font-size:11px;
-    color:var(--text-dim);
+    font-size:11.5px;
+    color:var(--dim);
   }
   .habit-group-tools button{
-    background:none;
-    border:1px solid var(--border-strong);
-    color:var(--text-faint);
-    font-family:'JetBrains Mono',monospace;
-    font-size:10px;
-    padding:4px 8px;
+    background:var(--card);
+    border:1px solid var(--border);
+    color:var(--faint);
+    font-size:10.5px;
+    font-weight:600;
+    padding:4px 9px;
+    border-radius:999px;
     cursor:pointer;
   }
-  .habit-group-tools button:hover{ color:var(--text); border-color:var(--text-faint); }
+  .habit-group-tools button:hover{ color:var(--text); border-color:var(--border-strong); }
   .streak{
     font-family:'JetBrains Mono',monospace;
     font-size:11px;
-    color:var(--steel);
+    color:var(--good);
+    background:var(--good-soft);
+    border-radius:999px;
+    padding:2px 8px;
     white-space:nowrap;
   }
 
+  /* ---------- Footer ---------- */
+  footer.notes{ padding:24px 16px 60px; }
+  footer.notes details{ margin-bottom:16px; }
+  footer.notes summary{
+    list-style:none;
+    cursor:pointer;
+    font-size:13px;
+    font-weight:600;
+    color:var(--dim);
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    user-select:none;
+  }
+  footer.notes summary::-webkit-details-marker{ display:none; }
+  footer.notes summary::before{
+    content:"›";
+    display:inline-block;
+    transition:transform 0.2s ease;
+  }
+  footer.notes details[open] summary::before{ transform:rotate(90deg); }
+  .notes ul{
+    list-style:none;
+    display:flex;
+    flex-direction:column;
+    gap:9px;
+    margin-top:12px;
+  }
+  .notes li{
+    font-size:13px;
+    color:var(--dim);
+    padding-left:16px;
+    position:relative;
+  }
+  .notes li::before{
+    content:"—";
+    position:absolute;
+    left:0;
+    color:var(--accent);
+  }
   .reset-row{
-    margin-top:24px;
-    text-align:right;
     display:flex;
     flex-wrap:wrap;
     justify-content:flex-end;
     gap:10px;
   }
-  .reset-row button{
-    background:none;
-    border:1px solid var(--border-strong);
-    color:var(--text-faint);
-    font-family:'JetBrains Mono',monospace;
-    font-size:11px;
-    padding:6px 10px;
-    cursor:pointer;
-  }
-  .reset-row button:hover{ color:var(--text); border-color:var(--text-faint); }
 
-  @media (max-width:480px){
-    h1{ font-size:32px; }
-    .vol-row{ grid-template-columns:82px 1fr 40px; }
+  /* ---------- Celebration ---------- */
+  .toast{
+    position:fixed;
+    left:50%;
+    bottom:28px;
+    transform:translate(-50%, 80px);
+    background:var(--good);
+    color:#0b0e13;
+    font-size:14px;
+    font-weight:700;
+    padding:12px 22px;
+    border-radius:999px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.4);
+    z-index:100;
+    transition:transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2), opacity 0.35s ease;
+    opacity:0;
+  }
+  .toast.show{ transform:translate(-50%, 0); opacity:1; }
+  .confetti{
+    position:fixed;
+    left:50%;
+    top:55%;
+    width:9px; height:9px;
+    border-radius:3px;
+    z-index:99;
+    pointer-events:none;
+    animation:confetti 1s ease-out forwards;
+  }
+  @keyframes confetti{
+    from{ opacity:1; transform:translate(0,0) rotate(0deg); }
+    to{ opacity:0; transform:translate(var(--dx), var(--dy)) rotate(var(--rot)); }
+  }
+
+  @media (max-width:420px){
+    .dash-grid{ grid-template-columns:1fr 1fr; }
+    .supp-dose{ width:120px; }
+    .supp-notes{ width:140px; }
   }
 </style>
 </head>
@@ -653,26 +793,69 @@
 
 <header class="hero">
   <div class="wrap">
-    <div class="eyebrow">Five-day hypertrophy split</div>
-    <h1>Ledger</h1>
-    <p>Upper/lower split built around chest-lat priority, strength, and pump days. RIR-anchored, myo-reps on isolation work, stretch-focused technique cues. Tap sets as you go, edit weights as you progress.</p>
+    <div class="brand">Ledger</div>
+    <h1 id="today-date">Today</h1>
+    <p class="sub">Five-day hypertrophy split · chest–lat priority</p>
     <div class="bw-row">
-      <span class="section-label">Morning weight</span>
+      <span class="field-label">Morning weight</span>
       <input type="text" id="bw-input" class="weight-input bw-input" placeholder="lb">
       <span class="bw-hint" id="bw-hint"></span>
     </div>
   </div>
 </header>
 
-<section class="volume">
-  <div class="wrap">
-    <div class="section-label">Weekly volume</div>
-    <div class="section-title">Working sets per muscle group</div>
-    <div id="vol-chart"></div>
-    <div class="vol-legend">
-      <span><span class="swatch" style="background:var(--steel-dim)"></span>within 10–20 set landmark</span>
-      <span><span class="swatch" style="background:var(--rust-dim)"></span>outside landmark</span>
+<section class="dash">
+  <div class="wrap dash-grid">
+
+    <div class="card wide">
+      <div class="card-label">Today's workout</div>
+      <div class="dash-today-row">
+        <div class="ring-wrap" id="dash-ring-wrap">
+          <svg width="58" height="58" viewBox="0 0 58 58">
+            <circle class="ring-track" cx="29" cy="29" r="25"></circle>
+            <circle class="ring-fill" id="dash-ring" cx="29" cy="29" r="25" stroke-dasharray="157" stroke-dashoffset="157"></circle>
+          </svg>
+          <div class="ring-pct" id="dash-ring-pct">0%</div>
+        </div>
+        <div class="dash-today-main">
+          <div class="dash-title" id="dash-today-title">—</div>
+          <div class="dash-sub" id="dash-today-sub"></div>
+        </div>
+        <div class="session-timer">
+          <span class="timer-clock" id="session-clock">0:00</span>
+          <button id="session-pause-btn" disabled>Pause</button>
+        </div>
+      </div>
     </div>
+
+    <div class="card">
+      <div class="card-label">Weekly progress</div>
+      <div class="stat-big" id="dash-week-sets">0 / 0</div>
+      <div class="stat-sub">sets this week</div>
+      <div class="stat-row">
+        <div class="stat-big" id="dash-week-days" style="font-size:16px">0 / 5</div>
+        <div class="stat-sub">workouts done</div>
+      </div>
+      <span class="streak-tag" id="dash-streak" hidden></span>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Supplements</div>
+      <div class="stat-big" id="dash-supp-count">0 / 5</div>
+      <div class="stat-sub">taken today</div>
+      <div class="pill-track"><div class="pill-fill" id="dash-supp-fill" style="width:0%"></div></div>
+    </div>
+
+    <div class="card wide">
+      <div class="card-label">Muscle volume — sets per week</div>
+      <div id="vol-chart"></div>
+      <div class="vol-legend">
+        <span><span class="swatch" style="background:var(--good)"></span>in zone (10–20)</span>
+        <span><span class="swatch" style="background:var(--warn)"></span>below 10</span>
+        <span><span class="swatch" style="background:var(--bad)"></span>above 20</span>
+      </div>
+    </div>
+
   </div>
 </section>
 
@@ -719,20 +902,21 @@
 
 <footer class="notes">
   <div class="wrap">
-    <div class="section-label">Standing rules</div>
-    <div class="section-title">General notes</div>
-    <ul>
-      <li>Deload every 5–6 weeks: roughly half the volume, same or slightly lighter weight.</li>
-      <li>Sleep 7–9 hours — the biggest recovery lever, directly affects muscle protein synthesis.</li>
-      <li>Creatine monohydrate, 3–5g daily. No loading or cycling needed.</li>
-      <li>Caffeine 200–400mg pre-workout on heavy days (Mon / Wed / Sat).</li>
-      <li>Protein: 210g spread across 4–5 meals, roughly 40–50g each.</li>
-      <li>Hydration matters — even mild dehydration measurably reduces output.</li>
-      <li>RIR calibration: take one set to true failure every few weeks to keep your sense of it accurate.</li>
-      <li>Track weekly sets per muscle group — stay in the 10–20 range shown above.</li>
-      <li>Once weekly weight/rep jumps start to stall, shift toward undulating or block periodization.</li>
-      <li>Finish every set of an exercise once and it locks in "Last" performance, PRs, and next-session guidance.</li>
-    </ul>
+    <details>
+      <summary>Standing rules</summary>
+      <ul>
+        <li>Deload every 5–6 weeks: roughly half the volume, same or slightly lighter weight.</li>
+        <li>Sleep 7–9 hours — the biggest recovery lever, directly affects muscle protein synthesis.</li>
+        <li>Creatine monohydrate, 3–5g daily. No loading or cycling needed.</li>
+        <li>Caffeine 200–400mg pre-workout on heavy days (Mon / Wed / Sat).</li>
+        <li>Protein: 210g spread across 4–5 meals, roughly 40–50g each.</li>
+        <li>Hydration matters — even mild dehydration measurably reduces output.</li>
+        <li>RIR calibration: take one set to true failure every few weeks to keep your sense of it accurate.</li>
+        <li>Track weekly sets per muscle group — stay in the 10–20 range shown above.</li>
+        <li>Once weekly weight/rep jumps start to stall, shift toward undulating or block periodization.</li>
+        <li>Finish every set of an exercise once and it locks in "Last" performance, PRs, and next-session guidance.</li>
+      </ul>
+    </details>
     <div class="reset-row">
       <button id="export-btn">Export data</button>
       <button id="import-btn">Import data</button>
@@ -846,7 +1030,7 @@ function renderVolume(){
   const el = document.getElementById('vol-chart');
   el.innerHTML = Object.keys(MUSCLE_LABELS).map(m=>{
     const count = vol[m] || 0;
-    const inZone = count >= 10 && count <= 20;
+    const zone = count > 20 ? 'over' : (count >= 10 ? 'in-zone' : '');
     const pct = Math.min(100, (count/max)*100);
     const zoneLeft = (10/max)*100;
     const zoneWidth = (10/max)*100;
@@ -854,7 +1038,7 @@ function renderVolume(){
       <div class="vol-name">${MUSCLE_LABELS[m]}</div>
       <div class="vol-track">
         <div class="vol-zone" style="left:${zoneLeft}%; width:${zoneWidth}%"></div>
-        <div class="vol-fill ${inZone?'in-zone':''}" style="width:${pct}%"></div>
+        <div class="vol-fill ${zone}" style="width:${pct}%"></div>
       </div>
       <div class="vol-count">${count}</div>
     </div>`;
@@ -924,7 +1108,7 @@ function progressionBadge(dayKey, idx, target){
   if(belowBottom > reps.length/2){
     return `<div class="progression down">▼ Missed the bottom of the rep range on most sets — reduce weight slightly or repeat.</div>`;
   }
-  return `<div class="progression hold">⚠ Hit the target on some sets last time — keep the same weight.</div>`;
+  return `<div class="progression hold">→ Hit the target on some sets last time — keep the same weight.</div>`;
 }
 
 // --- Last session performance + personal records ---
@@ -937,11 +1121,11 @@ function perfInfoHtml(dayKey, idx){
   if(last){
     const repsStr = last.reps && last.reps.length ? ` × ${last.reps.map(escapeHtml).join(' / ')}` : '';
     const dayName = DAY_NAMES[last.dayKey] || last.dayKey;
-    parts.push(`<div class="last-perf">Last: ${escapeHtml(last.weight || '—')}${repsStr}<br><span class="perf-date">Last performed: ${dayName}</span></div>`);
+    parts.push(`<span class="last-perf">Last · ${escapeHtml(last.weight || '—')}${repsStr} <span class="perf-date">· ${dayName}</span></span>`);
   }
   if(pr){
     const prRepsStr = pr.reps && pr.reps.length ? ` × ${pr.reps.map(escapeHtml).join(' / ')}` : '';
-    parts.push(`<div class="pr-badge">PR — ${escapeHtml(pr.weight || '—')}${prRepsStr}</div>`);
+    parts.push(`<span class="pr-badge">PR · ${escapeHtml(pr.weight || '—')}${prRepsStr}</span>`);
   }
   return `<div class="perf-info">${parts.join('')}</div>`;
 }
@@ -1003,14 +1187,27 @@ function handleExerciseCompletion(card, dayKey, idx, ex){
   }
 }
 
+function exerciseChecked(dayKey, idx, ex){
+  const checks = getChecks();
+  const wk = weekKey();
+  const n = displaySets(ex);
+  let done = 0;
+  for(let i=0; i<n; i++){
+    const entry = checks[`${dayKey}-${idx}-${i}`];
+    if(entry && entry.v && entry.wk === wk) done++;
+  }
+  return { done, total: n, complete: n > 0 && done === n };
+}
+
 function exerciseCard(dayKey, ex, idx){
   const cls = ex.myo ? 'myo' : (ex.superset ? 'superset' : '');
   const tag = ex.myo ? 'Myo-reps' : (ex.superset ? 'Superset' : '');
   const setCount = displaySets(ex);
   const target = ex.myo ? null : parseRepTarget(ex.data);
+  const state = exerciseChecked(dayKey, idx, ex);
   const boxes = Array.from({length:setCount}).map((_,i)=>{
     const key = `${dayKey}-${idx}-${i}`;
-    const repsInput = target ? `<input class="reps-input" data-key="${key}-r" value="${escapeHtml(getRepValue(key+'-r'))}" placeholder="${target.upper}">` : '';
+    const repsInput = target ? `<input class="reps-input" data-key="${key}-r" value="${escapeHtml(getRepValue(key+'-r'))}" placeholder="${target.upper}" inputmode="numeric">` : '';
     return `<div class="set-unit">
       <div class="set-box" data-key="${key}">${i+1}</div>
       ${repsInput}
@@ -1020,41 +1217,26 @@ function exerciseCard(dayKey, ex, idx){
   const noteKey = `${dayKey}-${idx}`;
   const myNote = getMyNote(noteKey);
   const timerKey = `${dayKey}-${idx}`;
-  const timer = ex.restSec ? `<div class="rest-timer"><button class="timer-btn" data-key="${timerKey}" data-sec="${ex.restSec}">Start rest — ${formatMMSS(ex.restSec)}</button></div>` : '';
-  return `<div class="exercise ${cls}" data-day="${dayKey}" data-idx="${idx}">
+  const timer = ex.restSec ? `<div class="rest-timer"><button class="timer-btn" data-key="${timerKey}" data-sec="${ex.restSec}">Rest ${formatMMSS(ex.restSec)}</button></div>` : '';
+  const notesOpen = myNote ? ' open' : '';
+  return `<div class="exercise ${cls} ${state.complete ? 'complete' : ''}" data-day="${dayKey}" data-idx="${idx}">
     <div class="ex-top">
       <div class="ex-name">${ex.name}</div>
       ${tag ? `<div class="ex-tag">${tag}</div>` : ''}
     </div>
-    <div class="ex-data">
-      <span><b>${fillWeights(dayKey, idx, ex)}</b></span>
-      <span>${ex.rir}</span>
-      ${ex.rest && ex.rest !== '—' ? `<span>rest ${ex.rest}</span>` : ''}
+    <div class="ex-rx">
+      <b>${fillWeights(dayKey, idx, ex)}</b>
+      <span class="rx-meta">${ex.rir}</span>
+      ${ex.rest && ex.rest !== '—' ? `<span class="rx-meta">rest ${ex.rest}</span>` : ''}
     </div>
-    ${ex.note ? `<div class="ex-note"><strong>Note —</strong> ${ex.note}</div>` : ''}
     ${insights}
-    <div class="my-note"><input class="note-input" data-key="${noteKey}" value="${escapeHtml(myNote)}" placeholder="Add a note… (seat height, cues, how it felt)"></div>
     <div class="sets">${boxes}</div>
     ${timer}
-  </div>`;
-}
-
-function sessionBarHtml(day, key){
-  const totalSets = day.exercises.reduce((sum,ex)=>sum + displaySets(ex), 0);
-  const isToday = key === getTodayKey();
-  return `<div class="session-bar">
-    <div class="session-progress">
-      <div class="section-label">Workout progress</div>
-      <div class="progress-row">
-        <span id="session-progress-text">0 / ${totalSets} sets completed</span>
-        <span id="session-progress-pct">0%</span>
-      </div>
-      <div class="progress-track"><div class="progress-fill" id="session-progress-fill" style="width:0%"></div></div>
-    </div>
-    ${isToday ? `<div class="session-timer">
-      <span class="timer-clock" id="session-clock">0:00</span>
-      <button id="session-pause-btn" disabled>Pause</button>
-    </div>` : ''}
+    <details class="ex-notes"${notesOpen}>
+      <summary>Notes</summary>
+      ${ex.note ? `<div class="ex-note"><strong>Technique —</strong> ${ex.note}</div>` : ''}
+      <div class="my-note"><input class="note-input" data-key="${noteKey}" value="${escapeHtml(myNote)}" placeholder="Add a note… (seat height, cues, how it felt)"></div>
+    </details>
   </div>`;
 }
 
@@ -1063,14 +1245,20 @@ function renderDay(key){
   if(day.rest){
     return `<div class="day-head"><h2>${day.title}</h2><div class="day-sub">${day.sub}</div></div>
       <div class="rest-day">
-        <div class="big">Rest</div>
+        <div class="big">Rest day</div>
         Full rest supports connective tissue recovery.
       </div>`;
   }
   const readiness = day.readiness ? `<div class="readiness">${day.readiness}</div>` : '';
   const cards = day.exercises.map((ex,i)=>exerciseCard(key, ex, i)).join('');
   return `<div class="day-head"><h2>${day.title}</h2><div class="day-sub">${day.sub}</div></div>
-    ${sessionBarHtml(day, key)}
+    <div class="day-progress">
+      <div class="progress-row">
+        <span id="day-progress-text"></span>
+        <span id="day-progress-pct"></span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="day-progress-fill" style="width:0%"></div></div>
+    </div>
     ${readiness}
     ${cards}`;
 }
@@ -1095,7 +1283,7 @@ function startRestTimer(key, seconds, btn){
         setTimeout(()=>{
           if(btn.isConnected){
             btn.classList.remove('done');
-            btn.textContent = `Start rest — ${formatMMSS(seconds)}`;
+            btn.textContent = `Rest ${formatMMSS(seconds)}`;
           }
         }, 4000);
       }
@@ -1112,19 +1300,173 @@ function clearAllTimers(){
   Object.keys(timers).forEach(k=>delete timers[k]);
 }
 
-// --- Workout completion progress ---
-function updateSessionProgress(){
-  const fill = document.getElementById('session-progress-fill');
-  if(!fill) return;
-  const container = document.querySelector('.day.active');
-  if(!container) return;
-  const boxes = container.querySelectorAll('.set-box');
-  const total = boxes.length;
-  const done = container.querySelectorAll('.set-box.done').length;
-  const pct = total ? Math.round((done/total)*100) : 0;
-  document.getElementById('session-progress-text').textContent = `${done} / ${total} sets completed`;
-  document.getElementById('session-progress-pct').textContent = `${pct}%`;
+// --- Day / week progress helpers ---
+function dayProgress(key){
+  const day = DATA[key];
+  if(!day || !day.exercises) return null;
+  let total = 0, done = 0;
+  day.exercises.forEach((ex, idx)=>{
+    const s = exerciseChecked(key, idx, ex);
+    total += s.total;
+    done += s.done;
+  });
+  return { total, done, complete: total > 0 && done === total };
+}
+
+function todayGymProgress(){
+  const key = getTodayKey();
+  const day = DATA[key];
+  if(!day || day.rest) return null;
+  const p = dayProgress(key);
+  return { title: day.title, total: p.total, done: p.done, complete: p.complete };
+}
+
+function weekStats(){
+  let totalSets = 0, doneSets = 0, daysTotal = 0, daysDone = 0;
+  Object.keys(DATA).forEach(k=>{
+    const p = dayProgress(k);
+    if(!p) return;
+    daysTotal++;
+    totalSets += p.total;
+    doneSets += p.done;
+    if(p.complete) daysDone++;
+  });
+  return { totalSets, doneSets, daysTotal, daysDone };
+}
+
+// --- Workout streak (training days completed; rest days pass through) ---
+function getWorkoutLog(){
+  try{ return JSON.parse(localStorage.getItem('ledger-workout-log')) || {}; }
+  catch(e){ return {}; }
+}
+function markWorkoutToday(){
+  const log = getWorkoutLog();
+  log[localDateStr()] = true;
+  localStorage.setItem('ledger-workout-log', JSON.stringify(log));
+}
+function workoutStreak(){
+  const log = getWorkoutLog();
+  const d = new Date();
+  if(!log[localDateStr(d)]) d.setDate(d.getDate() - 1);
+  let streak = 0;
+  for(let i=0; i<365; i++){
+    const key = ['sun','mon','tue','wed','thu','fri','sat'][d.getDay()];
+    const def = DATA[key];
+    if(def && def.rest){ d.setDate(d.getDate() - 1); continue; }
+    if(log[localDateStr(d)]){ streak++; d.setDate(d.getDate() - 1); }
+    else break;
+  }
+  return streak;
+}
+
+// --- Dashboard ---
+const RING_CIRC = 157;
+
+function renderDashboard(){
+  const titleEl = document.getElementById('dash-today-title');
+  if(!titleEl) return;
+
+  const todayKey = getTodayKey();
+  const day = DATA[todayKey];
+  const ring = document.getElementById('dash-ring');
+  const ringWrap = document.getElementById('dash-ring-wrap');
+  const ringPct = document.getElementById('dash-ring-pct');
+  const subEl = document.getElementById('dash-today-sub');
+
+  if(day.rest){
+    titleEl.textContent = 'Rest day';
+    subEl.textContent = 'Recovery counts';
+    ring.style.strokeDashoffset = RING_CIRC;
+    ringPct.textContent = '—';
+    ringWrap.classList.remove('done');
+  } else {
+    const p = dayProgress(todayKey);
+    const pct = p.total ? Math.round((p.done/p.total)*100) : 0;
+    titleEl.textContent = `${day.title} · ${day.sub}`;
+    subEl.textContent = `${p.done} / ${p.total} sets`;
+    ring.style.strokeDashoffset = RING_CIRC - (RING_CIRC * pct / 100);
+    ringPct.textContent = `${pct}%`;
+    ringWrap.classList.toggle('done', p.complete);
+  }
+
+  const ws = weekStats();
+  document.getElementById('dash-week-sets').textContent = `${ws.doneSets} / ${ws.totalSets}`;
+  document.getElementById('dash-week-days').textContent = `${ws.daysDone} / ${ws.daysTotal}`;
+  const streak = workoutStreak();
+  const streakEl = document.getElementById('dash-streak');
+  streakEl.hidden = streak < 2;
+  if(streak >= 2) streakEl.textContent = `${streak}-day streak`;
+
+  updateDashSupps();
+}
+
+function updateDashSupps(){
+  const el = document.getElementById('dash-supp-count');
+  if(!el) return;
+  const today = getSuppToday();
+  const supps = suppList();
+  const taken = supps.filter(s=>today[s.id] && today[s.id].taken).length;
+  const pct = supps.length ? Math.round((taken/supps.length)*100) : 0;
+  el.textContent = `${taken} / ${supps.length}`;
+  const fill = document.getElementById('dash-supp-fill');
   fill.style.width = `${pct}%`;
+  fill.classList.toggle('done', pct === 100);
+}
+
+// --- Workout completion progress (viewed day) ---
+function updateSessionProgress(){
+  const fill = document.getElementById('day-progress-fill');
+  if(fill){
+    const container = document.querySelector('.day.active');
+    if(container){
+      const boxes = container.querySelectorAll('.set-box');
+      const total = boxes.length;
+      const done = container.querySelectorAll('.set-box.done').length;
+      const pct = total ? Math.round((done/total)*100) : 0;
+      document.getElementById('day-progress-text').textContent = `${done} / ${total} sets completed`;
+      document.getElementById('day-progress-pct').textContent = `${pct}%`;
+      fill.style.width = `${pct}%`;
+      fill.classList.toggle('done', pct === 100);
+    }
+  }
+  renderDashboard();
+}
+
+// --- Celebration ---
+const celebrated = new Set();
+
+function maybeCelebrate(viewedKey){
+  const p = dayProgress(viewedKey);
+  if(!p || !p.complete) return;
+  const token = `${viewedKey}-${weekKey()}`;
+  if(celebrated.has(token)) return;
+  celebrated.add(token);
+  if(viewedKey === getTodayKey()) markWorkoutToday();
+  celebrate();
+}
+
+function celebrate(){
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = 'Workout complete';
+  document.body.appendChild(toast);
+  requestAnimationFrame(()=>toast.classList.add('show'));
+  setTimeout(()=>{
+    toast.classList.remove('show');
+    setTimeout(()=>toast.remove(), 400);
+  }, 2200);
+
+  const colors = ['#7c9aff','#3ecf8e','#f5c26b','#f07a7a'];
+  for(let i=0; i<16; i++){
+    const p = document.createElement('span');
+    p.className = 'confetti';
+    p.style.background = colors[i % colors.length];
+    p.style.setProperty('--dx', (Math.random()*260 - 130) + 'px');
+    p.style.setProperty('--dy', (Math.random()*-220 - 40) + 'px');
+    p.style.setProperty('--rot', (Math.random()*720 - 360) + 'deg');
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(), 1100);
+  }
 }
 
 // --- Session timer: starts automatically on the first completed set of the day ---
@@ -1268,6 +1610,7 @@ function updateSuppCount(){
   const supps = suppList();
   const taken = supps.filter(s=>today[s.id] && today[s.id].taken).length;
   document.getElementById('supp-count').textContent = `${taken} / ${supps.length} taken`;
+  updateDashSupps();
 }
 
 function initSupplements(){
@@ -1375,29 +1718,11 @@ function habitStreak(id){
   return streak;
 }
 
-function todayGymProgress(){
-  const key = getTodayKey();
-  const day = DATA[key];
-  if(!day || day.rest) return null;
-  const checks = getChecks();
-  const wk = weekKey();
-  let total = 0, done = 0;
-  day.exercises.forEach((ex, idx)=>{
-    const n = displaySets(ex);
-    total += n;
-    for(let i=0; i<n; i++){
-      const entry = checks[`${key}-${idx}-${i}`];
-      if(entry && entry.v && entry.wk === wk) done++;
-    }
-  });
-  return { title: day.title, total, done, complete: total > 0 && done === total };
-}
-
 function gymHabitHtml(){
   const prog = todayGymProgress();
   if(!prog){
     return `<div class="supp-row">
-      <div class="supp-check auto">—</div>
+      <div class="supp-check auto">☾</div>
       <div class="supp-main">
         <div class="supp-name">Gym<span class="opt">rest day</span></div>
         <div class="supp-fields">No session scheduled today — recovery counts.</div>
@@ -1559,19 +1884,44 @@ function importData(file){
   reader.readAsText(file);
 }
 
+// --- Day navigation ---
+function updateNavStates(){
+  const nav = document.getElementById('day-nav');
+  const todayKey = getTodayKey();
+  Object.keys(DATA).forEach(k=>{
+    const btn = nav.querySelector(`button[data-key="${k}"]`);
+    if(!btn) return;
+    const day = DATA[k];
+    let icon = '';
+    if(day.rest){
+      icon = '<span class="pill-icon rest">☾</span>';
+    } else {
+      const p = dayProgress(k);
+      if(p && p.complete) icon = '<span class="pill-icon check">✓</span>';
+    }
+    btn.innerHTML = `${day.label}${icon}`;
+    btn.classList.toggle('today', k === todayKey);
+  });
+}
+
 function init(){
+  document.getElementById('today-date').textContent =
+    new Date().toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' });
+
   renderVolume();
   pruneOldChecks();
   initBodyweight();
   initSupplements();
   initHabits();
+  renderDashboard();
   setInterval(tickSessionClock, 1000);
 
   const nav = document.getElementById('day-nav');
   const content = document.getElementById('day-content');
   const keys = Object.keys(DATA);
 
-  nav.innerHTML = keys.map(k=>`<button data-key="${k}">${DATA[k].label} · ${DATA[k].title}</button>`).join('');
+  nav.innerHTML = keys.map(k=>`<button data-key="${k}">${DATA[k].label}</button>`).join('');
+  updateNavStates();
 
   function showDay(key){
     clearAllTimers();
@@ -1584,6 +1934,10 @@ function init(){
     updateSessionProgress();
     updateSessionPauseBtn();
     tickSessionClock();
+
+    // don't celebrate a day that was already complete when opened
+    const p = dayProgress(key);
+    if(p && p.complete) celebrated.add(`${key}-${weekKey()}`);
 
     content.querySelectorAll('.set-box').forEach(box=>{
       box.addEventListener('click', ()=>{
@@ -1604,9 +1958,18 @@ function init(){
           if(timerBtn) startRestTimer(timerBtn.dataset.key, parseInt(timerBtn.dataset.sec,10), timerBtn);
         }
 
+        const allDone = [...card.querySelectorAll('.set-box')].every(b=>b.classList.contains('done'));
+        card.classList.toggle('complete', allDone);
+
         updateSessionProgress();
         handleExerciseCompletion(card, dayKey, idx, ex);
+        updateNavStates();
+        keys.forEach(k=>{
+          const btn = nav.querySelector(`button[data-key="${k}"]`);
+          btn.classList.toggle('active', k===key);
+        });
         renderHabits();
+        maybeCelebrate(key);
       });
     });
 
@@ -1633,9 +1996,6 @@ function init(){
         startRestTimer(btn.dataset.key, parseInt(btn.dataset.sec,10), btn);
       });
     });
-
-    const pauseBtn = document.getElementById('session-pause-btn');
-    if(pauseBtn) pauseBtn.addEventListener('click', toggleSessionPause);
   }
 
   nav.addEventListener('click', e=>{
@@ -1646,10 +2006,16 @@ function init(){
 
   showDay(keys.includes(getTodayKey()) ? getTodayKey() : keys[0]);
 
+  document.getElementById('session-pause-btn').addEventListener('click', toggleSessionPause);
+
   document.getElementById('reset-btn').addEventListener('click', ()=>{
     localStorage.removeItem('ledger-checks');
     document.querySelectorAll('.set-box.done').forEach(b=>b.classList.remove('done'));
+    document.querySelectorAll('.exercise.complete').forEach(c=>c.classList.remove('complete'));
     updateSessionProgress();
+    updateNavStates();
+    const active = nav.querySelector('button.active');
+    if(active) active.classList.add('active');
     renderHabits();
   });
 
