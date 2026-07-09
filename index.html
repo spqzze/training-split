@@ -1030,6 +1030,96 @@
   }
   .meal-total .m-macros{ font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--dim); font-weight:500; }
 
+  .meal-card{
+    border-bottom:1px solid var(--border);
+    padding:10px 0;
+  }
+  .meal-card:last-child{ border-bottom:none; }
+  .meal-card-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:10px;
+  }
+  .meal-card-top .m-name{ font-size:13.5px; font-weight:600; }
+  .meal-card-top .when{ font-size:11px; color:var(--faint); font-family:'JetBrains Mono',monospace; white-space:nowrap; }
+  .meal-foods{ font-size:11.5px; color:var(--faint); margin-top:2px; }
+  .meal-card-bottom{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-top:6px;
+    flex-wrap:wrap;
+  }
+  .meal-card-bottom .m-macros{ font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--dim); }
+  .meal-actions{ display:flex; gap:6px; }
+  .mini-btn{
+    background:var(--card-2);
+    border:1px solid var(--border);
+    color:var(--dim);
+    font-size:10.5px;
+    font-weight:600;
+    padding:4px 9px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:transform 0.15s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+  .mini-btn:active{ transform:scale(0.93); }
+  .mini-btn.primary{ background:var(--accent); border-color:var(--accent); color:#0b0e13; font-weight:700; }
+  .mini-btn.danger:hover{ color:var(--bad); border-color:var(--bad); }
+  .row-edit-btn{ font-size:10.5px; padding:4px 9px; flex:0 0 auto; }
+  .meal-edit-grid{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px 12px;
+    margin-top:8px;
+  }
+  .meal-edit-grid label{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-size:10.5px;
+    color:var(--faint);
+    font-family:'JetBrains Mono',monospace;
+  }
+  .meal-edit-grid input{
+    width:56px;
+    background:var(--card-2);
+    border:1px solid var(--border-strong);
+    color:var(--text);
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    padding:4px 6px;
+    border-radius:8px;
+    text-align:center;
+  }
+  .meal-edit-grid input:focus{ outline:none; border-color:var(--accent); }
+  .upd-default{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-size:11px;
+    color:var(--dim);
+    margin-top:8px;
+    cursor:pointer;
+  }
+  .upd-default input{ accent-color:var(--accent); width:15px; height:15px; }
+  .food-form{ display:flex; flex-direction:column; gap:10px; margin-top:14px; text-align:left; }
+  .food-form label{ font-size:11.5px; color:var(--faint); display:flex; flex-direction:column; gap:4px; }
+  .food-form .row4{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .food-form input, .food-form select{
+    background:var(--card-2);
+    border:1px solid var(--border-strong);
+    color:var(--text);
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    padding:7px 9px;
+    border-radius:9px;
+    width:100%;
+  }
+  .food-form input:focus, .food-form select:focus{ outline:none; border-color:var(--accent); }
+
   /* ---------- Confirm dialog ---------- */
   .sheet.center{ align-items:center; padding:0 24px; }
   .dialog-card{
@@ -1247,8 +1337,9 @@
       <div class="card">
         <div class="card-label">Quick meal <span class="mini">type what you ate</span></div>
         <div style="display:flex;gap:10px">
-          <input class="note-input" id="meal-input" placeholder='e.g. "200g chicken, 1 cup rice"' aria-label="Meal description">
+          <input class="note-input" id="meal-input" placeholder='e.g. "12 oz chicken, 1 cup rice"' aria-label="Meal description">
           <button class="ghost-btn" id="meal-add-btn" style="flex:0 0 auto">Log</button>
+          <button class="ghost-btn" id="custom-food-btn" style="flex:0 0 auto" aria-label="New custom food">+ Food</button>
         </div>
         <div class="empty-note" style="padding-top:8px">Try: "12 oz chicken, 1 cup cooked rice, 1 banana" — multiple foods in one line work.</div>
       </div>
@@ -1453,10 +1544,41 @@
   </div>
 </div>
 
+<!-- ================= CUSTOM FOOD ================= -->
+<div class="sheet center" id="food-sheet" role="dialog" aria-modal="true" aria-label="New custom food">
+  <div class="dialog-card" style="text-align:left;max-width:340px">
+    <div class="dialog-title">New custom food</div>
+    <div class="food-form">
+      <label>Name <input id="cf-name" placeholder="e.g. Mom's lasagna"></label>
+      <label>Serving unit
+        <select id="cf-unit">
+          <option value="serving">serving</option>
+          <option value="oz">oz</option>
+          <option value="cup">cup</option>
+          <option value="scoop">scoop</option>
+          <option value="slice">slice</option>
+          <option value="piece">piece</option>
+          <option value="tbsp">tbsp</option>
+        </select>
+      </label>
+      <div class="row4">
+        <label>kcal <input id="cf-cal" inputmode="numeric" placeholder="0"></label>
+        <label>P (g) <input id="cf-pro" inputmode="numeric" placeholder="0"></label>
+        <label>C (g) <input id="cf-carb" inputmode="numeric" placeholder="0"></label>
+        <label>F (g) <input id="cf-fat" inputmode="numeric" placeholder="0"></label>
+      </div>
+    </div>
+    <div class="dialog-actions">
+      <button id="cf-cancel">Cancel</button>
+      <button class="confirm" id="cf-save">Save food</button>
+    </div>
+  </div>
+</div>
+
 <!-- ================= MEAL PREVIEW ================= -->
 <div class="sheet" id="meal-sheet" role="dialog" aria-modal="true" aria-label="Meal preview">
   <div class="sheet-card left">
-    <div class="sheet-title">Meal preview</div>
+    <div class="sheet-title" id="meal-sheet-title">Meal preview</div>
     <div class="meal-rows" id="meal-preview-list"></div>
     <div class="meal-total" id="meal-preview-total"></div>
     <div class="rest-controls" style="margin-top:14px">
@@ -3518,6 +3640,7 @@ function getMacroDay(dateStr){
   return day || { meals:[], totals:{ calories:0, protein:0, carbs:0, fat:0 } };
 }
 function getSavedMeals(){ return storeGet('ledger-macro-saved', []); }
+function getCustomFoods(){ return storeGet('ledger-macro-foods', []); }
 
 function macroRemaining(){
   const goals = getMacroGoals();
@@ -3552,11 +3675,33 @@ function renderMacros(){
 
   const saved = getSavedMeals();
   document.getElementById('saved-meals').innerHTML = saved.length
-    ? saved.map(s=>`<div class="pr-line"><span class="who"><span>${escapeHtml(s.name)}</span></span><span class="what">${Math.round(s.calories||0)} kcal · P${Math.round(s.protein||0)} C${Math.round(s.carbs||0)} F${Math.round(s.fat||0)}</span></div>`).join('')
-    : `<div class="empty-note">No saved meals yet — once logging lands, save any meal here for one-tap reuse.</div>`;
+    ? saved.map(s=>`<div class="meal-card" data-sid="${escapeHtml(s.id)}">
+        <div class="meal-card-top"><span class="m-name">★ ${escapeHtml(s.name)}</span></div>
+        <div class="meal-foods">${(s.items||[]).map(i=>`${+(+i.qty).toFixed(2)} ${escapeHtml(i.unit)} ${escapeHtml(i.name)}`).join(' · ')}</div>
+        <div class="meal-card-bottom">
+          <span class="m-macros">${Math.round(s.calories||0)} kcal · P${Math.round(s.protein||0)} C${Math.round(s.carbs||0)} F${Math.round(s.fat||0)}</span>
+          <span class="meal-actions">
+            <button class="mini-btn primary" data-act="log">Log</button>
+            <button class="mini-btn danger" data-act="unfav" aria-label="Remove favorite">×</button>
+          </span>
+        </div>
+      </div>`).join('')
+    : `<div class="empty-note">No saved meals yet — tap ☆ on any logged meal to keep it here for one-tap logging.</div>`;
 
   document.getElementById('today-meals').innerHTML = day.meals.length
-    ? day.meals.map(m=>`<div class="pr-line"><span class="who"><span>${escapeHtml(m.name)}</span></span><span class="what">${Math.round(m.calories||0)} kcal · P${Math.round(m.protein||0)} C${Math.round(m.carbs||0)} F${Math.round(m.fat||0)}</span><span class="when">${escapeHtml(m.time||'')}</span></div>`).join('')
+    ? day.meals.map(m=>`<div class="meal-card" data-id="${escapeHtml(m.id)}">
+        <div class="meal-card-top"><span class="m-name">${escapeHtml(m.name)}</span><span class="when">${escapeHtml(m.time||'')}</span></div>
+        <div class="meal-foods">${(m.items||[]).map(i=>`${+(+i.qty).toFixed(2)} ${escapeHtml(i.unit)} ${escapeHtml(i.name)}`).join(' · ')}</div>
+        <div class="meal-card-bottom">
+          <span class="m-macros">${Math.round(m.calories||0)} kcal · P${Math.round(m.protein||0)} C${Math.round(m.carbs||0)} F${Math.round(m.fat||0)}</span>
+          <span class="meal-actions">
+            <button class="mini-btn" data-act="edit">Edit</button>
+            <button class="mini-btn" data-act="dup">Duplicate</button>
+            <button class="mini-btn" data-act="fav" aria-label="Save to favorites">☆</button>
+            <button class="mini-btn danger" data-act="del">Delete</button>
+          </span>
+        </div>
+      </div>`).join('')
     : `<div class="empty-note">Nothing logged yet today.</div>`;
 
   const calPct = goals.calories ? Math.round(((t.calories||0)/goals.calories)*100) : 0;
@@ -3613,20 +3758,35 @@ const FOOD_DB = [
   { id:'avocado', name:'Avocado', unit:'piece', calories:240, protein:3, carbs:12, fat:22, aliases:['avocado'] },
 ];
 
+// ledger-macro-foods holds two kinds of entries:
+//   custom foods:  { id:'custom-…', name, unit, aliases, calories…, custom:true }
+//   overrides:     { id:<built-in food id>, calories…, override:true }  (per-unit)
+function getCustomFoodList(){ return getCustomFoods().filter(f=>f.custom && f.name); }
+function getFoodOverride(id){ return getCustomFoods().find(f=>f.override && f.id === id) || null; }
+function effFood(food){
+  const o = getFoodOverride(food.id);
+  return o ? { ...food, calories:o.calories, protein:o.protein, carbs:o.carbs, fat:o.fat } : food;
+}
+function foodById(id){
+  return FOOD_DB.find(f=>f.id === id) || getCustomFoodList().find(f=>f.id === id) || null;
+}
+
 // Alias lookup, longest alias first, so "cooked rice" beats "rice" and
-// "yogurt bowl with protein" beats "yogurt bowl".
-const FOOD_ALIAS_INDEX = FOOD_DB
-  .flatMap(f=>f.aliases.map(a=>({ alias:a, food:f })))
-  .concat(FOOD_DB.flatMap(f=>getCustomFoodAliases(f)))
-  .sort((a,b)=>b.alias.length - a.alias.length);
-function getCustomFoodAliases(){ return []; } // custom foods (ledger-macro-foods) join the index in a later phase
+// "yogurt bowl with protein" beats "yogurt bowl". Rebuilt whenever
+// custom foods change.
+let FOOD_INDEX = [];
+function rebuildFoodIndex(){
+  FOOD_INDEX = FOOD_DB.concat(getCustomFoodList())
+    .flatMap(f=>(f.aliases && f.aliases.length ? f.aliases : [normFoodText(f.name)]).map(a=>({ alias:a, food:f })))
+    .sort((a,b)=>b.alias.length - a.alias.length);
+}
 
 function normFoodText(s){
   return s.toLowerCase().replace(/[^a-z0-9\s\/]/g,' ').replace(/\s+/g,' ').trim();
 }
 function matchFood(text){
   const t = ' ' + normFoodText(text) + ' ';
-  for(const { alias, food } of FOOD_ALIAS_INDEX){
+  for(const { alias, food } of FOOD_INDEX){
     if(t.includes(' ' + alias + ' ')) return food;
   }
   return null;
@@ -3686,6 +3846,7 @@ function parseMealText(text){
       return;
     }
     const { servings, approx } = servingsFor(food, qty, unit);
+    const eff = effFood(food);
     items.push({
       raw: seg,
       food,
@@ -3693,10 +3854,10 @@ function parseMealText(text){
       unit: unit || food.unit,
       servings,
       approx: !!approx,
-      calories: food.calories * servings,
-      protein: food.protein * servings,
-      carbs: food.carbs * servings,
-      fat: food.fat * servings,
+      calories: eff.calories * servings,
+      protein: eff.protein * servings,
+      carbs: eff.carbs * servings,
+      fat: eff.fat * servings,
     });
   });
   const known = items.filter(i=>!i.unknown);
@@ -3709,44 +3870,203 @@ function parseMealText(text){
   return { items, totals };
 }
 
-/* ---------- Meal preview sheet (Phase 2: preview only, no saving) ---------- */
+/* ---------- Meal storage ---------- */
+const round1 = n => Math.round(n*10)/10;
+function newMealId(){ return 'm' + Date.now() + Math.random().toString(36).slice(2,6); }
+function nowTimeStr(){ return new Date().toLocaleTimeString(undefined, { hour:'numeric', minute:'2-digit' }); }
+function mealName(items){
+  const names = items.map(i=>i.food ? i.food.name : (i.name || 'Item'));
+  return names.slice(0,2).join(' + ') + (names.length > 2 ? ` +${names.length-2}` : '');
+}
+function recomputeDayTotals(day){
+  day.totals = { calories:0, protein:0, carbs:0, fat:0 };
+  day.meals.forEach(m=>{
+    day.totals.calories += m.calories; day.totals.protein += m.protein;
+    day.totals.carbs += m.carbs; day.totals.fat += m.fat;
+  });
+}
+function upsertMeal(meal, dateStr){
+  const log = getMacroLog();
+  const d = dateStr || localDateStr();
+  const day = log[d] || { meals:[], totals:{ calories:0, protein:0, carbs:0, fat:0 } };
+  const i = day.meals.findIndex(m=>m.id === meal.id);
+  if(i >= 0) day.meals[i] = meal; else day.meals.push(meal);
+  recomputeDayTotals(day);
+  log[d] = day;
+  storeSet('ledger-macro-log', log);
+}
+function removeMeal(id, dateStr){
+  const log = getMacroLog();
+  const d = dateStr || localDateStr();
+  if(!log[d]) return;
+  log[d].meals = log[d].meals.filter(m=>m.id !== id);
+  recomputeDayTotals(log[d]);
+  storeSet('ledger-macro-log', log);
+}
+function upsertFoodOverride(id, per){
+  const foods = getCustomFoods();
+  const rec = { id, override:true, calories:round1(per.calories), protein:round1(per.protein), carbs:round1(per.carbs), fat:round1(per.fat) };
+  const i = foods.findIndex(f=>f.override && f.id === id);
+  if(i >= 0) foods[i] = rec; else foods.push(rec);
+  storeSet('ledger-macro-foods', foods);
+}
+function macroRefresh(){ renderMacros(); renderDashMacros(); }
+
+// Seed the favorites list once with the everyday staples.
+function seedFavorites(){
+  const ms = storeGet('ledger-macro-settings', {});
+  if(ms.favSeeded) return;
+  const saved = getSavedMeals();
+  if(!saved.length){
+    [['Chicken & dry rice','12 oz chicken + 1 cup dry rice'],
+     ['Beef & dry rice','12 oz beef + 1 cup dry rice'],
+     ['Yogurt bowl','1 yogurt bowl'],
+     ['Milk + protein','16 oz milk + 1 scoop protein']].forEach(([name, text])=>{
+      const known = parseMealText(text).items.filter(i=>!i.unknown);
+      if(!known.length) return;
+      saved.push(favoriteFromItems(name, known));
+    });
+    storeSet('ledger-macro-saved', saved);
+  }
+  storeSet('ledger-macro-settings', Object.assign(ms, { favSeeded:true }));
+}
+function storableItems(items){
+  return items.map(i=>({
+    foodId: i.food ? i.food.id : null,
+    name: i.food ? i.food.name : (i.name || 'Item'),
+    qty: +i.qty, unit: i.unit, servings: i.servings,
+    calories: round1(i.calories), protein: round1(i.protein),
+    carbs: round1(i.carbs), fat: round1(i.fat),
+  }));
+}
+function favoriteFromItems(name, items){
+  const st = storableItems(items);
+  return {
+    id: newMealId(), name,
+    items: st,
+    calories: round1(st.reduce((a,i)=>a+i.calories,0)),
+    protein: round1(st.reduce((a,i)=>a+i.protein,0)),
+    carbs: round1(st.reduce((a,i)=>a+i.carbs,0)),
+    fat: round1(st.reduce((a,i)=>a+i.fat,0)),
+  };
+}
+
+/* ---------- Meal preview / editor sheet ---------- */
 let pendingMeal = null;
 
-function openMealPreview(parsed){
-  pendingMeal = parsed;
-  const listEl = document.getElementById('meal-preview-list');
-  listEl.innerHTML = parsed.items.map(i=>{
-    if(i.unknown){
-      return `<div class="meal-row unknown">
-        <span class="m-name">"${escapeHtml(i.raw)}"<span class="m-qty">not recognized — try a simpler name</span></span>
-        <span class="m-macros">—</span>
-      </div>`;
-    }
-    const qtyStr = `${+i.qty.toFixed(2)} ${i.unit}${i.approx ? ` ≈ ${+i.servings.toFixed(2)} ${i.food.unit}` : ''}`;
-    return `<div class="meal-row">
-      <span class="m-name">${escapeHtml(i.food.name)}<span class="m-qty">${escapeHtml(qtyStr)}</span></span>
-      <span class="m-macros">${Math.round(i.calories)} kcal · P${Math.round(i.protein)} C${Math.round(i.carbs)} F${Math.round(i.fat)}</span>
-    </div>`;
-  }).join('') || `<div class="empty-note">Nothing detected — try "12 oz chicken".</div>`;
-  const t = parsed.totals;
-  document.getElementById('meal-preview-total').innerHTML = `
-    <span>Total</span>
-    <span class="m-macros">${Math.round(t.calories)} kcal · P${Math.round(t.protein)} C${Math.round(t.carbs)} F${Math.round(t.fat)}</span>`;
+function openMealPreview(items, { editingId=null, time=null, title='Meal preview' } = {}){
+  pendingMeal = { items, editingId, time };
+  document.getElementById('meal-sheet-title').textContent = title;
+  renderMealPreviewRows();
   document.getElementById('meal-sheet').classList.add('open');
 }
 function closeMealPreview(){
   document.getElementById('meal-sheet').classList.remove('open');
   pendingMeal = null;
 }
+function updateMealPreviewTotal(){
+  const known = pendingMeal.items.filter(i=>!i.unknown);
+  const t = {
+    calories: known.reduce((a,i)=>a+i.calories,0),
+    protein: known.reduce((a,i)=>a+i.protein,0),
+    carbs: known.reduce((a,i)=>a+i.carbs,0),
+    fat: known.reduce((a,i)=>a+i.fat,0),
+  };
+  document.getElementById('meal-preview-total').innerHTML = `
+    <span>Total</span>
+    <span class="m-macros">${Math.round(t.calories)} kcal · P${Math.round(t.protein)} C${Math.round(t.carbs)} F${Math.round(t.fat)}</span>`;
+}
+function renderMealPreviewRows(){
+  const listEl = document.getElementById('meal-preview-list');
+  listEl.innerHTML = pendingMeal.items.map((i, idx)=>{
+    if(i.unknown){
+      return `<div class="meal-row unknown">
+        <span class="m-name">"${escapeHtml(i.raw)}"<span class="m-qty">not recognized — try a simpler name or add it as a custom food</span></span>
+        <span class="m-macros">—</span>
+      </div>`;
+    }
+    const name = i.food ? i.food.name : (i.name || 'Item');
+    if(i.editing){
+      return `<div class="meal-row editing" data-i="${idx}">
+        <div style="flex:1;min-width:0">
+          <span class="m-name">${escapeHtml(name)}</span>
+          <div class="meal-edit-grid">
+            <label>qty <input data-f="qty" value="${+i.qty.toFixed(2)}" inputmode="decimal"> ${escapeHtml(i.unit)}</label>
+            <label>kcal <input data-f="calories" value="${Math.round(i.calories)}" inputmode="numeric"></label>
+            <label>P <input data-f="protein" value="${Math.round(i.protein)}" inputmode="numeric"></label>
+            <label>C <input data-f="carbs" value="${Math.round(i.carbs)}" inputmode="numeric"></label>
+            <label>F <input data-f="fat" value="${Math.round(i.fat)}" inputmode="numeric"></label>
+          </div>
+          ${i.food ? `<label class="upd-default"><input type="checkbox" data-f="updateDefault" ${i.updateDefault ? 'checked':''}> Update default food (applies per ${escapeHtml(i.food.unit)} from now on)</label>` : ''}
+        </div>
+        <button class="ghost-btn row-edit-btn" data-i="${idx}" aria-label="Done editing">Done</button>
+      </div>`;
+    }
+    const qtyStr = `${+i.qty.toFixed(2)} ${i.unit}${i.approx ? ` ≈ ${+i.servings.toFixed(2)} ${i.food.unit}` : ''}`;
+    return `<div class="meal-row" data-i="${idx}">
+      <span class="m-name">${escapeHtml(name)}<span class="m-qty">${escapeHtml(qtyStr)}</span></span>
+      <span class="m-macros">${Math.round(i.calories)} kcal · P${Math.round(i.protein)} C${Math.round(i.carbs)} F${Math.round(i.fat)}</span>
+      <button class="ghost-btn row-edit-btn" data-i="${idx}" aria-label="Edit ${escapeHtml(name)}">✎</button>
+    </div>`;
+  }).join('') || `<div class="empty-note">Nothing detected — try "12 oz chicken".</div>`;
+  updateMealPreviewTotal();
+}
+
+function commitPendingMeal(){
+  const known = pendingMeal.items.filter(i=>!i.unknown);
+  if(!known.length){ showToast('Nothing recognized to save'); return; }
+  const editing = !!pendingMeal.editingId;
+  // "Update default food": push this meal's per-unit macros into the DB override.
+  known.forEach(i=>{
+    if(i.updateDefault && i.food && i.servings > 0){
+      upsertFoodOverride(i.food.id, {
+        calories: i.calories/i.servings, protein: i.protein/i.servings,
+        carbs: i.carbs/i.servings, fat: i.fat/i.servings,
+      });
+    }
+  });
+  const st = storableItems(known);
+  upsertMeal({
+    id: pendingMeal.editingId || newMealId(),
+    time: pendingMeal.time || nowTimeStr(),
+    name: mealName(known),
+    items: st,
+    calories: round1(st.reduce((a,i)=>a+i.calories,0)),
+    protein: round1(st.reduce((a,i)=>a+i.protein,0)),
+    carbs: round1(st.reduce((a,i)=>a+i.carbs,0)),
+    fat: round1(st.reduce((a,i)=>a+i.fat,0)),
+  });
+  closeMealPreview();
+  document.getElementById('meal-input').value = '';
+  macroRefresh();
+  haptic(8);
+  showToast(editing ? 'Meal updated' : 'Meal logged', 'info');
+}
+
+function openMealEditor(meal){
+  const items = meal.items.map(si=>{
+    const food = si.foodId ? foodById(si.foodId) : null;
+    return {
+      food, name: si.name, qty: si.qty, unit: si.unit,
+      servings: si.servings ?? si.qty,
+      calories: si.calories, protein: si.protein, carbs: si.carbs, fat: si.fat,
+    };
+  });
+  openMealPreview(items, { editingId: meal.id, time: meal.time, title:'Edit meal' });
+}
 
 function handleMealInput(){
   const input = document.getElementById('meal-input');
   const text = input.value.trim();
   if(!text){ showToast('Type what you ate first'); return; }
-  openMealPreview(parseMealText(text));
+  openMealPreview(parseMealText(text).items);
 }
 
+/* ---------- Wiring ---------- */
 function initMacros(){
+  rebuildFoodIndex();
+  seedFavorites();
+
   document.getElementById('dash-macros').addEventListener('click', ()=>showTab('macros'));
   document.getElementById('dash-macros').addEventListener('keydown', e=>{
     if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); showTab('macros'); }
@@ -3755,10 +4075,7 @@ function initMacros(){
   document.getElementById('meal-input').addEventListener('keydown', e=>{
     if(e.key === 'Enter'){ e.preventDefault(); handleMealInput(); }
   });
-  document.getElementById('meal-save').addEventListener('click', ()=>{
-    showToast('Saving meals arrives in the next update', 'info');
-    closeMealPreview();
-  });
+  document.getElementById('meal-save').addEventListener('click', commitPendingMeal);
   document.getElementById('meal-edit').addEventListener('click', ()=>{
     closeMealPreview();
     document.getElementById('meal-input').focus();
@@ -3769,6 +4086,118 @@ function initMacros(){
   });
   document.getElementById('meal-sheet').addEventListener('click', e=>{
     if(e.target === e.currentTarget) closeMealPreview();
+  });
+
+  // Per-row editing inside the preview sheet
+  const listEl = document.getElementById('meal-preview-list');
+  listEl.addEventListener('click', e=>{
+    const btn = e.target.closest('.row-edit-btn');
+    if(!btn) return;
+    const item = pendingMeal.items[parseInt(btn.dataset.i, 10)];
+    item.editing = !item.editing;
+    renderMealPreviewRows();
+  });
+  listEl.addEventListener('input', e=>{
+    const inp = e.target.closest('input[data-f]');
+    if(!inp) return;
+    const row = inp.closest('.meal-row');
+    const item = pendingMeal.items[parseInt(row.dataset.i, 10)];
+    const f = inp.dataset.f;
+    if(f === 'updateDefault'){ item.updateDefault = inp.checked; return; }
+    const v = parseFloat(inp.value);
+    if(isNaN(v) || v < 0) return;
+    if(f === 'qty' && item.food){
+      // Re-derive servings and macros from the food's (possibly overridden) per-unit values.
+      item.qty = v;
+      item.servings = servingsFor(item.food, v, item.unit === item.food.unit ? item.unit : item.unit).servings;
+      const eff = effFood(item.food);
+      item.calories = eff.calories * item.servings;
+      item.protein = eff.protein * item.servings;
+      item.carbs = eff.carbs * item.servings;
+      item.fat = eff.fat * item.servings;
+      row.querySelectorAll('input[data-f]').forEach(other=>{
+        if(other !== inp && other.dataset.f !== 'updateDefault'){
+          other.value = Math.round(item[other.dataset.f]);
+        }
+      });
+    } else {
+      // Manual macro edit — affects only this meal unless "update default" is checked.
+      item[f] = v;
+    }
+    updateMealPreviewTotal();
+  });
+
+  // Today's meals: edit / duplicate / favorite / delete
+  document.getElementById('today-meals').addEventListener('click', e=>{
+    const btn = e.target.closest('[data-act]');
+    if(!btn) return;
+    const id = btn.closest('.meal-card').dataset.id;
+    const meal = getMacroDay().meals.find(m=>m.id === id);
+    if(!meal) return;
+    const act = btn.dataset.act;
+    if(act === 'edit'){ openMealEditor(meal); }
+    if(act === 'dup'){
+      upsertMeal({ ...meal, id:newMealId(), time:nowTimeStr() });
+      macroRefresh(); haptic(8); showToast('Meal duplicated', 'info');
+    }
+    if(act === 'fav'){
+      const saved = getSavedMeals();
+      saved.push({ ...favoriteFromItems(meal.name, []), name:meal.name, items:meal.items,
+        calories:meal.calories, protein:meal.protein, carbs:meal.carbs, fat:meal.fat });
+      storeSet('ledger-macro-saved', saved);
+      macroRefresh(); showToast('Saved to favorites', 'info');
+    }
+    if(act === 'del'){
+      removeMeal(id);
+      macroRefresh(); showToast('Meal deleted');
+    }
+  });
+
+  // Saved meals: one-tap log / remove
+  document.getElementById('saved-meals').addEventListener('click', e=>{
+    const btn = e.target.closest('[data-act]');
+    if(!btn) return;
+    const id = btn.closest('.meal-card').dataset.sid;
+    const fav = getSavedMeals().find(s=>s.id === id);
+    if(!fav) return;
+    if(btn.dataset.act === 'log'){
+      upsertMeal({ id:newMealId(), time:nowTimeStr(), name:fav.name, items:fav.items,
+        calories:fav.calories, protein:fav.protein, carbs:fav.carbs, fat:fav.fat });
+      macroRefresh(); haptic(8); showToast(`Logged ${fav.name}`, 'info');
+    }
+    if(btn.dataset.act === 'unfav'){
+      storeSet('ledger-macro-saved', getSavedMeals().filter(s=>s.id !== id));
+      macroRefresh();
+    }
+  });
+
+  // Custom food sheet
+  const foodSheet = document.getElementById('food-sheet');
+  document.getElementById('custom-food-btn').addEventListener('click', ()=>{
+    foodSheet.classList.add('open');
+    setTimeout(()=>document.getElementById('cf-name').focus(), 100);
+  });
+  document.getElementById('cf-cancel').addEventListener('click', ()=>foodSheet.classList.remove('open'));
+  foodSheet.addEventListener('click', e=>{ if(e.target === e.currentTarget) foodSheet.classList.remove('open'); });
+  document.getElementById('cf-save').addEventListener('click', ()=>{
+    const name = document.getElementById('cf-name').value.trim();
+    const cal = parseFloat(document.getElementById('cf-cal').value);
+    if(!name || isNaN(cal)){ showToast('A name and calories are required'); return; }
+    const foods = getCustomFoods();
+    foods.push({
+      id:'custom-' + Date.now(), name, custom:true,
+      unit: document.getElementById('cf-unit').value,
+      aliases:[normFoodText(name)],
+      calories: cal,
+      protein: parseFloat(document.getElementById('cf-pro').value) || 0,
+      carbs: parseFloat(document.getElementById('cf-carb').value) || 0,
+      fat: parseFloat(document.getElementById('cf-fat').value) || 0,
+    });
+    storeSet('ledger-macro-foods', foods);
+    rebuildFoodIndex();
+    foodSheet.classList.remove('open');
+    ['cf-name','cf-cal','cf-pro','cf-carb','cf-fat'].forEach(id=>document.getElementById(id).value = '');
+    showToast(`Added ${name} — type its name to log it`, 'info');
   });
 }
 
