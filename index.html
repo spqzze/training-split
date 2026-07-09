@@ -997,6 +997,39 @@
     content:"—"; position:absolute; left:0; color:var(--accent);
   }
 
+  /* ---------- Meal preview ---------- */
+  .sheet-card.left{ text-align:left; }
+  .meal-rows{ margin-top:14px; max-height:40vh; overflow-y:auto; }
+  .meal-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:10px;
+    padding:9px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .meal-row:last-child{ border-bottom:none; }
+  .meal-row .m-name{ font-size:13.5px; font-weight:600; min-width:0; }
+  .meal-row .m-qty{ font-size:11px; color:var(--faint); font-family:'JetBrains Mono',monospace; display:block; font-weight:400; }
+  .meal-row .m-macros{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px;
+    color:var(--dim);
+    white-space:nowrap;
+  }
+  .meal-row.unknown .m-name{ color:var(--warn); }
+  .meal-total{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 0 2px;
+    border-top:1px solid var(--border-strong);
+    margin-top:4px;
+    font-weight:700;
+    font-size:14px;
+  }
+  .meal-total .m-macros{ font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--dim); font-weight:500; }
+
   /* ---------- Confirm dialog ---------- */
   .sheet.center{ align-items:center; padding:0 24px; }
   .dialog-card{
@@ -1217,7 +1250,7 @@
           <input class="note-input" id="meal-input" placeholder='e.g. "200g chicken, 1 cup rice"' aria-label="Meal description">
           <button class="ghost-btn" id="meal-add-btn" style="flex:0 0 auto">Log</button>
         </div>
-        <div class="empty-note" style="padding-top:8px">Smart meal parsing arrives in the next update — logged meals will appear below automatically.</div>
+        <div class="empty-note" style="padding-top:8px">Try: "12 oz chicken, 1 cup cooked rice, 1 banana" — multiple foods in one line work.</div>
       </div>
 
       <div class="card">
@@ -1416,6 +1449,20 @@
     <div class="rest-controls">
       <button class="ghost-btn" id="rest-sound" aria-label="Toggle sound">Sound: on</button>
       <button class="ghost-btn" id="rest-skip" aria-label="Skip rest">Skip</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MEAL PREVIEW ================= -->
+<div class="sheet" id="meal-sheet" role="dialog" aria-modal="true" aria-label="Meal preview">
+  <div class="sheet-card left">
+    <div class="sheet-title">Meal preview</div>
+    <div class="meal-rows" id="meal-preview-list"></div>
+    <div class="meal-total" id="meal-preview-total"></div>
+    <div class="rest-controls" style="margin-top:14px">
+      <button class="ghost-btn" id="meal-cancel">Cancel</button>
+      <button class="ghost-btn" id="meal-edit">Edit</button>
+      <button class="ghost-btn primary" id="meal-save">Save</button>
     </div>
   </div>
 </div>
@@ -3530,16 +3577,198 @@ function renderDashMacros(){
   ).join('');
 }
 
+/* ---------- Food database (macros per one serving unit) ---------- */
+const FOOD_DB = [
+  { id:'chicken-breast', name:'Chicken breast', unit:'oz', calories:47, protein:8.8, carbs:0, fat:1, aliases:['chicken breast','grilled chicken','chicken'] },
+  { id:'ground-beef', name:'Lean ground beef (90/10)', unit:'oz', calories:61, protein:7.3, carbs:0, fat:3.4, aliases:['lean ground beef','ground beef','lean beef','beef'] },
+  { id:'rice-dry', name:'White rice (dry)', unit:'cup', calories:675, protein:13.1, carbs:148, fat:1.2, aliases:['dry white rice','uncooked rice','white rice dry','dry rice','rice dry'] },
+  { id:'rice-cooked', name:'White rice (cooked)', unit:'cup', calories:205, protein:4.3, carbs:45, fat:0.4, aliases:['cooked white rice','cooked rice','white rice','jasmine rice','rice'] },
+  { id:'whole-milk', name:'Whole milk', unit:'oz', liquid:true, calories:18.7, protein:1, carbs:1.5, fat:1, aliases:['whole milk','milk'] },
+  { id:'protein-powder', name:'Protein powder', unit:'scoop', calories:120, protein:24, carbs:3, fat:1.5, aliases:['protein powder','whey protein','protein shake','protein','whey'] },
+  { id:'greek-yogurt', name:'Greek yogurt', unit:'cup', calories:150, protein:25, carbs:8, fat:1, aliases:['greek yogurt','yogurt'] },
+  { id:'granola', name:'Granola', unit:'cup', calories:450, protein:10, carbs:64, fat:16, aliases:['granola'] },
+  { id:'honey', name:'Honey', unit:'tbsp', calories:64, protein:0, carbs:17.3, fat:0, aliases:['honey'] },
+  { id:'banana', name:'Banana', unit:'piece', calories:105, protein:1.3, carbs:27, fat:0.4, aliases:['bananas','banana'] },
+  { id:'yogurt-bowl', name:'Yogurt bowl', unit:'serving', calories:420, protein:28, carbs:62, fat:8, aliases:['yogurt bowl'] },
+  { id:'yogurt-bowl-protein', name:'Yogurt bowl with protein', unit:'serving', calories:540, protein:52, carbs:65, fat:9.5, aliases:['yogurt bowl with protein','protein yogurt bowl','yogurt bowl protein'] },
+  { id:'lemonade', name:'Lemonade', unit:'oz', liquid:true, calories:12.5, protein:0, carbs:3.3, fat:0, aliases:['lemonade'] },
+  { id:'gatorade', name:'Gatorade', unit:'oz', liquid:true, calories:6.7, protein:0, carbs:1.8, fat:0, aliases:['gatorade','sports drink'] },
+  { id:'orange-juice', name:'Orange juice', unit:'oz', liquid:true, calories:14, protein:0.2, carbs:3.3, fat:0, aliases:['orange juice','oj'] },
+  { id:'pj-pepperoni', name:"Papa John's pepperoni pizza", unit:'slice', calories:330, protein:14, carbs:37, fat:14, aliases:['papa johns pepperoni pizza','papa johns pepperoni','pepperoni pizza'] },
+  { id:'pj-supreme', name:"Papa John's supreme pizza", unit:'slice', calories:350, protein:15, carbs:38, fat:16, aliases:['papa johns supreme pizza','papa johns supreme','supreme pizza','the works pizza','the works'] },
+  { id:'cfa-grilled-nuggets', name:'Chick-fil-A grilled nuggets', unit:'piece', calories:16, protein:3.3, carbs:0.1, fat:0.4, aliases:['chick fil a grilled nuggets','grilled nuggets','grilled nugget'] },
+  { id:'cfa-fries', name:'Chick-fil-A fries (medium)', unit:'serving', calories:420, protein:5, carbs:45, fat:24, aliases:['chick fil a fries','waffle fries','cfa fries'] },
+  { id:'cfa-cookie', name:'Chick-fil-A cookie', unit:'piece', calories:350, protein:4, carbs:49, fat:16, aliases:['chick fil a cookies','chick fil a cookie','chocolate chunk cookie','cfa cookie','cookies','cookie'] },
+  { id:'popeyes-sandwich', name:'Popeyes chicken sandwich', unit:'piece', calories:700, protein:28, carbs:50, fat:42, aliases:['popeyes chicken sandwich','popeyes sandwich','chicken sandwich'] },
+  { id:'egg', name:'Egg', unit:'piece', calories:72, protein:6.3, carbs:0.4, fat:4.8, aliases:['eggs','egg'] },
+  { id:'oats', name:'Oats (dry)', unit:'cup', calories:300, protein:10.7, carbs:54.8, fat:5.3, aliases:['dry oats','oatmeal','oats'] },
+  { id:'bread', name:'Bread', unit:'slice', calories:80, protein:4, carbs:14, fat:1, aliases:['bread','toast'] },
+  { id:'peanut-butter', name:'Peanut butter', unit:'tbsp', calories:95, protein:4, carbs:3.5, fat:8, aliases:['peanut butter','pb'] },
+  { id:'apple', name:'Apple', unit:'piece', calories:95, protein:0.5, carbs:25, fat:0.3, aliases:['apples','apple'] },
+  { id:'salmon', name:'Salmon', unit:'oz', calories:58, protein:6.3, carbs:0, fat:3.7, aliases:['salmon'] },
+  { id:'steak', name:'Steak (sirloin)', unit:'oz', calories:55, protein:7.8, carbs:0, fat:2.5, aliases:['sirloin','steak'] },
+  { id:'potato', name:'Potato', unit:'oz', calories:25, protein:0.6, carbs:5.6, fat:0, aliases:['white potato','potatoes','potato'] },
+  { id:'sweet-potato', name:'Sweet potato', unit:'oz', calories:24, protein:0.5, carbs:5.6, fat:0, aliases:['sweet potatoes','sweet potato'] },
+  { id:'pasta-cooked', name:'Pasta (cooked)', unit:'cup', calories:220, protein:8, carbs:43, fat:1.3, aliases:['cooked pasta','spaghetti','pasta'] },
+  { id:'avocado', name:'Avocado', unit:'piece', calories:240, protein:3, carbs:12, fat:22, aliases:['avocado'] },
+];
+
+// Alias lookup, longest alias first, so "cooked rice" beats "rice" and
+// "yogurt bowl with protein" beats "yogurt bowl".
+const FOOD_ALIAS_INDEX = FOOD_DB
+  .flatMap(f=>f.aliases.map(a=>({ alias:a, food:f })))
+  .concat(FOOD_DB.flatMap(f=>getCustomFoodAliases(f)))
+  .sort((a,b)=>b.alias.length - a.alias.length);
+function getCustomFoodAliases(){ return []; } // custom foods (ledger-macro-foods) join the index in a later phase
+
+function normFoodText(s){
+  return s.toLowerCase().replace(/[^a-z0-9\s\/]/g,' ').replace(/\s+/g,' ').trim();
+}
+function matchFood(text){
+  const t = ' ' + normFoodText(text) + ' ';
+  for(const { alias, food } of FOOD_ALIAS_INDEX){
+    if(t.includes(' ' + alias + ' ')) return food;
+  }
+  return null;
+}
+
+/* ---------- Natural-language meal parser ---------- */
+const UNIT_MAP = {
+  'oz':'oz','ounce':'oz','ounces':'oz','fl oz':'oz','floz':'oz',
+  'cup':'cup','cups':'cup',
+  'scoop':'scoop','scoops':'scoop',
+  'slice':'slice','slices':'slice',
+  'piece':'piece','pieces':'piece',
+  'serving':'serving','servings':'serving',
+  'tbsp':'tbsp','tbsps':'tbsp','tablespoon':'tbsp','tablespoons':'tbsp',
+  'bowl':'serving','bowls':'serving',
+};
+const COUNT_UNITS = ['piece','serving','slice','scoop'];
+
+function parseQty(raw){
+  if(!raw) return 1;
+  raw = raw.trim().toLowerCase();
+  if(raw === 'a' || raw === 'an') return 1;
+  if(raw === 'half') return 0.5;
+  const frac = raw.match(/^(\d+)\s*\/\s*(\d+)$/);
+  if(frac) return parseInt(frac[1],10) / parseInt(frac[2],10);
+  const n = parseFloat(raw);
+  return isNaN(n) ? 1 : n;
+}
+
+// Convert a parsed quantity+unit into servings of the food's own unit.
+function servingsFor(food, qty, unit){
+  if(!unit) return { servings: qty };
+  if(unit === food.unit) return { servings: qty };
+  if(food.liquid){
+    if(unit === 'cup' && food.unit === 'oz') return { servings: qty * 8 };
+    if(unit === 'oz' && food.unit === 'cup') return { servings: qty / 8 };
+  }
+  if(COUNT_UNITS.includes(unit) && COUNT_UNITS.includes(food.unit)) return { servings: qty };
+  return { servings: qty, approx: true };
+}
+
+// "12oz chicken, 2 cups cooked rice and 1 banana" → items + totals.
+function parseMealText(text){
+  const segments = String(text).split(/,|;|\+|\band\b/i).map(s=>s.trim()).filter(Boolean);
+  const items = [];
+  const SEG_RE = /^\s*(\d+\s*\/\s*\d+|\d+(?:\.\d+)?|a|an|half)?\s*(fl\s?oz|ounces?|oz|cups?|scoops?|slices?|pieces?|servings?|tbsps?|tablespoons?|bowls?)?\.?\s*(?:of\s+)?(.*)$/i;
+  segments.forEach(seg=>{
+    const m = seg.match(SEG_RE);
+    if(!m) return;
+    const qty = parseQty(m[1]);
+    const unit = m[2] ? UNIT_MAP[m[2].toLowerCase().replace(/\s+/g,' ')] || null : null;
+    const foodText = (m[3] || '').trim();
+    if(!foodText && !unit) return;
+    const food = matchFood(foodText || seg);
+    if(!food){
+      items.push({ raw: seg, unknown: true });
+      return;
+    }
+    const { servings, approx } = servingsFor(food, qty, unit);
+    items.push({
+      raw: seg,
+      food,
+      qty,
+      unit: unit || food.unit,
+      servings,
+      approx: !!approx,
+      calories: food.calories * servings,
+      protein: food.protein * servings,
+      carbs: food.carbs * servings,
+      fat: food.fat * servings,
+    });
+  });
+  const known = items.filter(i=>!i.unknown);
+  const totals = {
+    calories: known.reduce((a,i)=>a+i.calories, 0),
+    protein: known.reduce((a,i)=>a+i.protein, 0),
+    carbs: known.reduce((a,i)=>a+i.carbs, 0),
+    fat: known.reduce((a,i)=>a+i.fat, 0),
+  };
+  return { items, totals };
+}
+
+/* ---------- Meal preview sheet (Phase 2: preview only, no saving) ---------- */
+let pendingMeal = null;
+
+function openMealPreview(parsed){
+  pendingMeal = parsed;
+  const listEl = document.getElementById('meal-preview-list');
+  listEl.innerHTML = parsed.items.map(i=>{
+    if(i.unknown){
+      return `<div class="meal-row unknown">
+        <span class="m-name">"${escapeHtml(i.raw)}"<span class="m-qty">not recognized — try a simpler name</span></span>
+        <span class="m-macros">—</span>
+      </div>`;
+    }
+    const qtyStr = `${+i.qty.toFixed(2)} ${i.unit}${i.approx ? ` ≈ ${+i.servings.toFixed(2)} ${i.food.unit}` : ''}`;
+    return `<div class="meal-row">
+      <span class="m-name">${escapeHtml(i.food.name)}<span class="m-qty">${escapeHtml(qtyStr)}</span></span>
+      <span class="m-macros">${Math.round(i.calories)} kcal · P${Math.round(i.protein)} C${Math.round(i.carbs)} F${Math.round(i.fat)}</span>
+    </div>`;
+  }).join('') || `<div class="empty-note">Nothing detected — try "12 oz chicken".</div>`;
+  const t = parsed.totals;
+  document.getElementById('meal-preview-total').innerHTML = `
+    <span>Total</span>
+    <span class="m-macros">${Math.round(t.calories)} kcal · P${Math.round(t.protein)} C${Math.round(t.carbs)} F${Math.round(t.fat)}</span>`;
+  document.getElementById('meal-sheet').classList.add('open');
+}
+function closeMealPreview(){
+  document.getElementById('meal-sheet').classList.remove('open');
+  pendingMeal = null;
+}
+
+function handleMealInput(){
+  const input = document.getElementById('meal-input');
+  const text = input.value.trim();
+  if(!text){ showToast('Type what you ate first'); return; }
+  openMealPreview(parseMealText(text));
+}
+
 function initMacros(){
   document.getElementById('dash-macros').addEventListener('click', ()=>showTab('macros'));
   document.getElementById('dash-macros').addEventListener('keydown', e=>{
     if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); showTab('macros'); }
   });
-  document.getElementById('meal-add-btn').addEventListener('click', ()=>{
-    showToast('Meal logging arrives in the next update', 'info');
-  });
+  document.getElementById('meal-add-btn').addEventListener('click', handleMealInput);
   document.getElementById('meal-input').addEventListener('keydown', e=>{
-    if(e.key === 'Enter') showToast('Meal logging arrives in the next update', 'info');
+    if(e.key === 'Enter'){ e.preventDefault(); handleMealInput(); }
+  });
+  document.getElementById('meal-save').addEventListener('click', ()=>{
+    showToast('Saving meals arrives in the next update', 'info');
+    closeMealPreview();
+  });
+  document.getElementById('meal-edit').addEventListener('click', ()=>{
+    closeMealPreview();
+    document.getElementById('meal-input').focus();
+  });
+  document.getElementById('meal-cancel').addEventListener('click', ()=>{
+    closeMealPreview();
+    document.getElementById('meal-input').value = '';
+  });
+  document.getElementById('meal-sheet').addEventListener('click', e=>{
+    if(e.target === e.currentTarget) closeMealPreview();
   });
 }
 
