@@ -1,4 +1,4 @@
-const CACHE = 'ledger-v4';
+const CACHE = 'ledger-v5';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -18,9 +18,13 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   e.respondWith(
     fetch(e.request).then(res => {
-      const copy = res.clone();
-      caches.open(CACHE).then(c => c.put(e.request, copy));
+      const url = new URL(e.request.url);
+      if (url.origin === self.location.origin && res.ok && res.type === 'basic') {
+        const copy = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, copy));
+      }
       return res;
-    }).catch(() => caches.match(e.request, { ignoreSearch: true }))
+    }).catch(() => caches.match(e.request, { ignoreSearch: true })
+      .then(match => match || (e.request.mode === 'navigate' ? caches.match('./index.html') : undefined)))
   );
 });

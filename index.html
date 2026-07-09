@@ -1114,7 +1114,7 @@
       </div>
 
       <div class="card">
-        <div class="card-label">Today's habits <span class="mini" id="dash-habit-count"></span></div>
+        <div class="card-label">Today's quick checks <span class="mini" id="dash-habit-count"></span></div>
         <div class="quick-list" id="dash-habits"></div>
       </div>
     </div>
@@ -1434,6 +1434,11 @@ const ACCENTS = { indigo:'#7c9aff', teal:'#4ecdc4', coral:'#ff8f70', violet:'#b7
 /* =========================================================
    Storage core — safe JSON get/set + schema versioning
    ========================================================= */
+const LEDGER_KEYS = ['ledger-checks','ledger-weights','ledger-reps','ledger-lastperf','ledger-pr',
+  'ledger-mynotes','ledger-bodyweight','ledger-session','ledger-supp-defs','ledger-supp-log',
+  'ledger-habit-defs','ledger-habit-log','ledger-workout-log','ledger-history',
+  'ledger-pr-history','ledger-session-log','ledger-settings'];
+
 function storeGet(key, fallback){
   try{
     const raw = localStorage.getItem(key);
@@ -1445,26 +1450,71 @@ function storeSet(key, value){
   try{ localStorage.setItem(key, JSON.stringify(value)); }
   catch(e){ /* quota exceeded or private mode — keep the app alive */ }
 }
+function isPlainObject(value){
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+function cleanRecord(value){
+  return isPlainObject(value) ? value : {};
+}
+function cleanArray(value){
+  return Array.isArray(value) ? value : [];
+}
+function cleanString(value){
+  return typeof value === 'string' ? value : '';
+}
+function cleanBool(value){
+  return value === true;
+}
+function cleanStorageValue(key, value){
+  switch(key){
+    case 'ledger-checks':
+    case 'ledger-weights':
+    case 'ledger-reps':
+    case 'ledger-lastperf':
+    case 'ledger-pr':
+    case 'ledger-mynotes':
+    case 'ledger-bodyweight':
+    case 'ledger-workout-log':
+    case 'ledger-history':
+    case 'ledger-session-log':
+      return cleanRecord(value);
+    case 'ledger-pr-history':
+      return cleanArray(value);
+    case 'ledger-session':
+      return isPlainObject(value) ? value : null;
+    case 'ledger-settings':
+      return cleanRecord(value);
+    case 'ledger-supp-defs':
+      return normalizeSuppDefs(value);
+    case 'ledger-supp-log':
+      return cleanRecord(value);
+    case 'ledger-habit-defs':
+      return normalizeHabitDefs(value);
+    case 'ledger-habit-log':
+      return cleanRecord(value);
+    default:
+      return value;
+  }
+}
+function getRecord(key){ return cleanRecord(storeGet(key, {})); }
+function getArray(key){ return cleanArray(storeGet(key, [])); }
 
 // Validate known keys; drop any that fail to parse so one corrupt save
 // can't break the whole app. Bumps ledger-schema when done.
 function migrateStorage(){
   const schema = parseInt(localStorage.getItem('ledger-schema') || '0', 10);
   if(schema >= SCHEMA_VERSION) return;
-  const KNOWN = ['ledger-checks','ledger-weights','ledger-reps','ledger-lastperf','ledger-pr',
-    'ledger-mynotes','ledger-bodyweight','ledger-session','ledger-supp-defs','ledger-supp-log',
-    'ledger-habit-defs','ledger-habit-log','ledger-workout-log','ledger-history',
-    'ledger-pr-history','ledger-session-log','ledger-settings'];
-  KNOWN.forEach(k=>{
+  LEDGER_KEYS.forEach(k=>{
     const raw = localStorage.getItem(k);
     if(raw === null) return;
-    try{ JSON.parse(raw); } catch(e){ localStorage.removeItem(k); }
+    try{ storeSet(k, cleanStorageValue(k, JSON.parse(raw))); }
+    catch(e){ localStorage.removeItem(k); }
   });
   localStorage.setItem('ledger-schema', String(SCHEMA_VERSION));
 }
 
 /* Typed accessors (kept API-compatible with earlier versions) */
-function getChecks(){ return storeGet('ledger-checks', {}); }
+function getChecks(){ return getRecord('ledger-checks'); }
 function saveCheck(key, val){
   const checks = getChecks();
   checks[key] = { v: val, wk: weekKey() };
@@ -1479,34 +1529,34 @@ function pruneOldChecks(){
   });
   if(changed) storeSet('ledger-checks', checks);
 }
-function getWeights(){ return storeGet('ledger-weights', {}); }
+function getWeights(){ return getRecord('ledger-weights'); }
 function saveWeight(key, val){ const w = getWeights(); w[key] = val; storeSet('ledger-weights', w); }
 function getWeightValue(key, fallback){
   const w = getWeights();
   return w[key] !== undefined ? w[key] : (fallback || '');
 }
-function getReps(){ return storeGet('ledger-reps', {}); }
+function getReps(){ return getRecord('ledger-reps'); }
 function saveRep(key, val){ const r = getReps(); r[key] = val; storeSet('ledger-reps', r); }
 function getRepValue(key){ const r = getReps(); return r[key] !== undefined ? r[key] : ''; }
-function getLastPerf(key){ return storeGet('ledger-lastperf', {})[key] || null; }
-function saveLastPerf(key, rec){ const all = storeGet('ledger-lastperf', {}); all[key] = rec; storeSet('ledger-lastperf', all); }
-function getPR(key){ return storeGet('ledger-pr', {})[key] || null; }
-function savePR(key, rec){ const all = storeGet('ledger-pr', {}); all[key] = rec; storeSet('ledger-pr', all); }
-function getMyNote(key){ return storeGet('ledger-mynotes', {})[key] || ''; }
-function saveMyNote(key, val){ const all = storeGet('ledger-mynotes', {}); all[key] = val; storeSet('ledger-mynotes', all); }
-function getBodyweights(){ return storeGet('ledger-bodyweight', {}); }
+function getLastPerf(key){ return getRecord('ledger-lastperf')[key] || null; }
+function saveLastPerf(key, rec){ const all = getRecord('ledger-lastperf'); all[key] = rec; storeSet('ledger-lastperf', all); }
+function getPR(key){ return getRecord('ledger-pr')[key] || null; }
+function savePR(key, rec){ const all = getRecord('ledger-pr'); all[key] = rec; storeSet('ledger-pr', all); }
+function getMyNote(key){ return getRecord('ledger-mynotes')[key] || ''; }
+function saveMyNote(key, val){ const all = getRecord('ledger-mynotes'); all[key] = val; storeSet('ledger-mynotes', all); }
+function getBodyweights(){ return getRecord('ledger-bodyweight'); }
 function saveBodyweight(dateStr, val){
   const all = getBodyweights();
   if(val === ''){ delete all[dateStr]; } else { all[dateStr] = val; }
   storeSet('ledger-bodyweight', all);
 }
-function getSession(){ return storeGet('ledger-session', null); }
+function getSession(){ const s = storeGet('ledger-session', null); return isPlainObject(s) ? s : null; }
 function saveSession(sess){ storeSet('ledger-session', sess); }
-function getWorkoutLog(){ return storeGet('ledger-workout-log', {}); }
-function getHistory(){ return storeGet('ledger-history', {}); }
-function getPrEvents(){ return storeGet('ledger-pr-history', []); }
-function getSessionLog(){ return storeGet('ledger-session-log', {}); }
-function getSettings(){ return storeGet('ledger-settings', {}); }
+function getWorkoutLog(){ return getRecord('ledger-workout-log'); }
+function getHistory(){ return getRecord('ledger-history'); }
+function getPrEvents(){ return getArray('ledger-pr-history'); }
+function getSessionLog(){ return getRecord('ledger-session-log'); }
+function getSettings(){ return getRecord('ledger-settings'); }
 function saveSettings(patch){
   const s = Object.assign(getSettings(), patch);
   storeSet('ledger-settings', s);
@@ -1520,6 +1570,12 @@ function escapeHtml(s){
   return String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function safeHttpUrl(value){
+  try{
+    const url = new URL(String(value), location.href);
+    return (url.protocol === 'http:' || url.protocol === 'https:') ? url.href : '';
+  } catch(e){ return ''; }
 }
 function localDateStr(date){
   const d = date || new Date();
@@ -1832,6 +1888,7 @@ function exerciseCard(dayKey, ex, idx){
   const noteKey = `${dayKey}-${idx}`;
   const myNote = getMyNote(noteKey);
   const videoUrl = getMyNote(noteKey + '-video');
+  const safeVideoUrl = safeHttpUrl(videoUrl);
   const timer = ex.restSec ? `<div class="rest-timer"><button class="timer-btn" data-key="${noteKey}" data-sec="${ex.restSec}">Rest ${formatMMSS(ex.restSec)}</button></div>` : '';
   return `<div class="exercise ${cls} ${state.complete ? 'complete' : ''} ${collapsed ? 'collapsed' : ''}" data-day="${dayKey}" data-idx="${idx}">
     <div class="ex-top">
@@ -1860,7 +1917,7 @@ function exerciseCard(dayKey, ex, idx){
       <div class="my-note">
         <input class="note-input" data-key="${noteKey}" value="${escapeHtml(myNote)}" placeholder="Add a note… (seat height, cues, how it felt)" aria-label="Personal note">
         <input class="note-input" data-key="${noteKey}-video" value="${escapeHtml(videoUrl)}" placeholder="▶ Form video link (optional)" aria-label="Form video link">
-        ${videoUrl ? `<a href="${escapeHtml(videoUrl)}" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent)">▶ Open form video</a>` : ''}
+        ${safeVideoUrl ? `<a href="${escapeHtml(safeVideoUrl)}" target="_blank" rel="noopener noreferrer" style="font-size:12px;color:var(--accent)">▶ Open form video</a>` : ''}
       </div>
     </details>
     </div></div>
@@ -2853,16 +2910,27 @@ const SUPP_DEFAULTS = [
   { id:"protein", name:"Protein powder", dose:"", optional:true },
   { id:"preworkout", name:"Pre-workout", dose:"", optional:true },
 ];
-function getSuppDefs(){ return storeGet('ledger-supp-defs', { doses:{}, custom:[] }); }
-function saveSuppDefs(defs){ storeSet('ledger-supp-defs', defs); }
-function getSuppLog(){ return storeGet('ledger-supp-log', {}); }
+function normalizeSuppDefs(value){
+  const defs = cleanRecord(value);
+  const doses = {};
+  Object.entries(cleanRecord(defs.doses)).forEach(([id,dose])=>{
+    if(typeof id === 'string') doses[id] = cleanString(dose);
+  });
+  const custom = cleanArray(defs.custom)
+    .filter(s=>isPlainObject(s) && cleanString(s.id) && cleanString(s.name))
+    .map(s=>({ id:cleanString(s.id), name:cleanString(s.name), dose:cleanString(s.dose), optional:cleanBool(s.optional), custom:true }));
+  return { doses, custom };
+}
+function getSuppDefs(){ return normalizeSuppDefs(storeGet('ledger-supp-defs', { doses:{}, custom:[] })); }
+function saveSuppDefs(defs){ storeSet('ledger-supp-defs', normalizeSuppDefs(defs)); }
+function getSuppLog(){ return getRecord('ledger-supp-log'); }
 function saveSuppLog(log){ storeSet('ledger-supp-log', log); }
-function getSuppToday(){ return getSuppLog()[localDateStr()] || {}; }
+function getSuppToday(){ return cleanRecord(getSuppLog()[localDateStr()]); }
 function saveSuppEntry(id, patch){
   const log = getSuppLog();
   const today = localDateStr();
-  log[today] = log[today] || {};
-  log[today][id] = Object.assign(log[today][id] || {}, patch);
+  log[today] = cleanRecord(log[today]);
+  log[today][id] = Object.assign(cleanRecord(log[today][id]), patch);
   saveSuppLog(log);
 }
 function suppList(){
@@ -2975,31 +3043,50 @@ const HABIT_SEED_GROUPS = [
     { id:"skincare-pm", name:"PM routine — cleanse, treatment, moisturize" },
   ]},
 ];
-function getHabitDefs(){
-  const stored = storeGet('ledger-habit-defs', null);
-  if(stored && stored.groups) return stored;
-  const seed = { groups: HABIT_SEED_GROUPS };
-  storeSet('ledger-habit-defs', seed);
-  return seed;
+function seededHabitDefs(){
+  return { groups:HABIT_SEED_GROUPS.map(group=>({
+    id:group.id,
+    name:group.name,
+    habits:group.habits.map(h=>({ id:h.id, name:h.name }))
+  })) };
 }
-function saveHabitDefs(defs){ storeSet('ledger-habit-defs', defs); }
-function getHabitLog(){ return storeGet('ledger-habit-log', {}); }
+function normalizeHabitDefs(value){
+  const defs = cleanRecord(value);
+  if(!Array.isArray(defs.groups)) return seededHabitDefs();
+  const groups = cleanArray(defs.groups)
+    .filter(group=>isPlainObject(group) && cleanString(group.id) && cleanString(group.name))
+    .map(group=>({
+      id:cleanString(group.id),
+      name:cleanString(group.name),
+      habits:cleanArray(group.habits)
+        .filter(habit=>isPlainObject(habit) && cleanString(habit.id) && cleanString(habit.name))
+        .map(habit=>({ id:cleanString(habit.id), name:cleanString(habit.name) }))
+    }));
+  return { groups };
+}
+function getHabitDefs(){
+  const defs = normalizeHabitDefs(storeGet('ledger-habit-defs', null));
+  storeSet('ledger-habit-defs', defs);
+  return defs;
+}
+function saveHabitDefs(defs){ storeSet('ledger-habit-defs', normalizeHabitDefs(defs)); }
+function getHabitLog(){ return getRecord('ledger-habit-log'); }
 function saveHabitLog(log){ storeSet('ledger-habit-log', log); }
-function isHabitDoneToday(id){ return !!(getHabitLog()[localDateStr()] || {})[id]; }
+function isHabitDoneToday(id){ return !!cleanRecord(getHabitLog()[localDateStr()])[id]; }
 function setHabitToday(id, done){
   const log = getHabitLog();
   const today = localDateStr();
-  log[today] = log[today] || {};
+  log[today] = cleanRecord(log[today]);
   if(done) log[today][id] = true; else delete log[today][id];
   saveHabitLog(log);
 }
 function habitStreak(id){
   const log = getHabitLog();
   const d = new Date();
-  if(!(log[localDateStr(d)] || {})[id]) d.setDate(d.getDate()-1);
+  if(!cleanRecord(log[localDateStr(d)])[id]) d.setDate(d.getDate()-1);
   let streak = 0;
   for(let i=0;i<365;i++){
-    if((log[localDateStr(d)] || {})[id]){ streak++; d.setDate(d.getDate()-1); }
+    if(cleanRecord(log[localDateStr(d)])[id]){ streak++; d.setDate(d.getDate()-1); }
     else break;
   }
   return streak;
@@ -3170,15 +3257,23 @@ function importData(file){
     let data;
     try{ data = JSON.parse(reader.result); }
     catch(e){ showToast('Import failed — not a valid Ledger backup'); return; }
-    const keys = Object.keys(data).filter(k=>k.startsWith('ledger-'));
-    if(!keys.length){ showToast('Import failed — not a valid Ledger backup'); return; }
+    if(!isPlainObject(data)){ showToast('Import failed — not a valid Ledger backup'); return; }
+    const restore = [];
+    Object.keys(data).forEach(k=>{
+      if(!LEDGER_KEYS.includes(k) || typeof data[k] !== 'string') return;
+      try{
+        const parsed = JSON.parse(data[k]);
+        restore.push([k, JSON.stringify(cleanStorageValue(k, parsed))]);
+      } catch(e){}
+    });
+    if(!restore.length){ showToast('Import failed — no readable Ledger records found'); return; }
     const ok = await appConfirm({
       title:'Restore backup?',
-      message:`This will overwrite the ${keys.length} matching records on this device with the backup's data.`,
+      message:`This will overwrite the ${restore.length} matching records on this device with the backup's data.`,
       confirmLabel:'Restore'
     });
     if(!ok) return;
-    keys.forEach(k=>localStorage.setItem(k, data[k]));
+    restore.forEach(([k,v])=>localStorage.setItem(k, v));
     showToast('Backup restored', 'info');
     setTimeout(()=>location.reload(), 900);
   };
