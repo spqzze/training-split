@@ -1035,6 +1035,23 @@
     padding:10px 0;
   }
   .meal-card:last-child{ border-bottom:none; }
+  .meal-card.meal-in{ animation:meal-in 0.4s cubic-bezier(0.3, 0.9, 0.3, 1); }
+  @keyframes meal-in{
+    from{ opacity:0; transform:translateY(-8px) scale(0.98); }
+    to{ opacity:1; transform:none; }
+  }
+  .meal-card.meal-out{
+    transition:opacity 0.24s ease, transform 0.24s ease;
+    opacity:0;
+    transform:translateX(-24px);
+    pointer-events:none;
+  }
+  .stat-goal{ color:var(--faint); font-size:12px; font-weight:400; }
+  .empty-state{ text-align:center; padding:16px 8px; }
+  .empty-state .es-title{ font-size:13.5px; font-weight:600; color:var(--dim); }
+  .empty-state .es-sub{ font-size:12px; color:var(--faint); margin-top:3px; }
+  .quick-meal-row{ display:flex; gap:10px; flex-wrap:wrap; }
+  .quick-meal-row .note-input{ flex:1 1 170px; min-width:0; }
   .meal-card-top{
     display:flex;
     justify-content:space-between;
@@ -1371,10 +1388,10 @@
 
       <div class="card">
         <div class="card-label">Quick meal <span class="mini">type what you ate</span></div>
-        <div style="display:flex;gap:10px">
+        <div class="quick-meal-row">
           <input class="note-input" id="meal-input" placeholder='e.g. "12 oz chicken, 1 cup rice"' aria-label="Meal description">
-          <button class="ghost-btn" id="meal-add-btn" style="flex:0 0 auto">Log</button>
-          <button class="ghost-btn" id="custom-food-btn" style="flex:0 0 auto" aria-label="New custom food">+ Food</button>
+          <button class="ghost-btn" id="meal-add-btn">Log</button>
+          <button class="ghost-btn" id="custom-food-btn" aria-label="New custom food">+ Food</button>
         </div>
         <div class="empty-note" style="padding-top:8px">Try: "12 oz chicken, 1 cup cooked rice, 1 banana" — multiple foods in one line work.</div>
       </div>
@@ -3687,6 +3704,7 @@ function ensureMacroStorage(){
   if(storeGet('ledger-macro-saved', null) === null) storeSet('ledger-macro-saved', []);  // reusable meals
   if(storeGet('ledger-macro-foods', null) === null) storeSet('ledger-macro-foods', []);  // custom food definitions
   if(storeGet('ledger-macro-analytics', null) === null) storeSet('ledger-macro-analytics', {}); // future trends/averages
+  if(storeGet('ledger-day-notes', null) === null) storeSet('ledger-day-notes', {});             // per-day journal notes
 }
 
 function getMacroGoals(){ return Object.assign({}, MACRO_DEFAULT_GOALS, storeGet('ledger-macro-goals', {})); }
@@ -3707,28 +3725,43 @@ function macroRemaining(){
   return out;
 }
 
+// Static structure built once so later updates only touch text and bar
+// widths — the CSS width transition makes every change glide smoothly.
+function buildMacroCards(){
+  document.getElementById('macro-cards').innerHTML = MACRO_DEFS.map(m=>`<div class="card">
+    <div class="card-label">${m.label}</div>
+    <div class="stat-big" style="font-size:18px"><span id="mc-${m.id}-val">0</span><span class="stat-goal" id="mc-${m.id}-goal"></span></div>
+    <div class="pill-track" style="margin-top:10px"><div class="pill-fill ${m.cls}" id="mc-${m.id}-fill" style="width:0%"></div></div>
+  </div>`).join('');
+  document.getElementById('macro-remaining').innerHTML = MACRO_DEFS.map(m=>
+    `<div><div class="kv-k">${m.label}</div><div class="kv-v" id="mr-${m.id}">—</div></div>`
+  ).join('');
+}
+
+function updateMacroCards(){
+  const goals = getMacroGoals();
+  const t = getMacroDay().totals;
+  const rem = macroRemaining();
+  MACRO_DEFS.forEach(m=>{
+    const goal = goals[m.id]||0;
+    document.getElementById(`mc-${m.id}-val`).textContent = Math.round(t[m.id]||0);
+    document.getElementById(`mc-${m.id}-goal`).textContent = ` / ${goal} ${m.unit}`;
+    document.getElementById(`mc-${m.id}-fill`).style.width =
+      (goal ? Math.min(100, Math.round(((t[m.id]||0)/goal)*100)) : 0) + '%';
+    document.getElementById(`mr-${m.id}`).textContent = `${rem[m.id]} ${m.unit}`;
+  });
+}
+
+function emptyState(title, sub){
+  return `<div class="empty-state"><div class="es-title">${title}</div><div class="es-sub">${sub}</div></div>`;
+}
+
 function renderMacros(){
-  const cardsEl = document.getElementById('macro-cards');
-  if(!cardsEl) return;
+  if(!document.getElementById('macro-cards')) return;
   const goals = getMacroGoals();
   const day = getMacroDay();
   const t = day.totals;
-
-  cardsEl.innerHTML = MACRO_DEFS.map(m=>{
-    const eaten = Math.round(t[m.id]||0);
-    const goal = goals[m.id]||0;
-    const pct = goal ? Math.min(100, Math.round((eaten/goal)*100)) : 0;
-    return `<div class="card">
-      <div class="card-label">${m.label}</div>
-      <div class="stat-big" style="font-size:18px">${eaten}<span style="color:var(--faint);font-size:12px;font-weight:400"> / ${goal} ${m.unit}</span></div>
-      <div class="pill-track" style="margin-top:10px"><div class="pill-fill ${m.cls}" style="width:${pct}%"></div></div>
-    </div>`;
-  }).join('');
-
-  const rem = macroRemaining();
-  document.getElementById('macro-remaining').innerHTML = MACRO_DEFS.map(m=>
-    `<div><div class="kv-k">${m.label}</div><div class="kv-v">${rem[m.id]} ${m.unit}</div></div>`
-  ).join('');
+  updateMacroCards();
 
   const saved = getSavedMeals();
   document.getElementById('saved-meals').innerHTML = saved.length
@@ -3743,10 +3776,10 @@ function renderMacros(){
           </span>
         </div>
       </div>`).join('')
-    : `<div class="empty-note">No saved meals yet — tap ☆ on any logged meal to keep it here for one-tap logging.</div>`;
+    : emptyState('No saved meals yet.', 'Tap ☆ on any logged meal to keep it here for one-tap logging.');
 
   document.getElementById('today-meals').innerHTML = day.meals.length
-    ? day.meals.map(m=>`<div class="meal-card" data-id="${escapeHtml(m.id)}">
+    ? day.meals.map(m=>`<div class="meal-card ${m.id === lastAddedMealId ? 'meal-in' : ''}" data-id="${escapeHtml(m.id)}">
         <div class="meal-card-top"><span class="m-name">${escapeHtml(m.name)}</span><span class="when">${escapeHtml(m.time||'')}</span></div>
         <div class="meal-foods">${(m.items||[]).map(i=>`${+(+i.qty).toFixed(2)} ${escapeHtml(i.unit)} ${escapeHtml(i.name)}`).join(' · ')}</div>
         <div class="meal-card-bottom">
@@ -3759,7 +3792,8 @@ function renderMacros(){
           </span>
         </div>
       </div>`).join('')
-    : `<div class="empty-note">Nothing logged yet today.</div>`;
+    : emptyState('No meals logged today.', 'Type a meal above, or tap Log on a favorite.');
+  lastAddedMealId = null;
 
   const calPct = goals.calories ? Math.round(((t.calories||0)/goals.calories)*100) : 0;
   const proPct = goals.protein ? Math.round(((t.protein||0)/goals.protein)*100) : 0;
@@ -4027,7 +4061,7 @@ function renderHistory(){
         <span class="m-name">${escapeHtml(m.name)}<span class="m-qty">${escapeHtml(m.time||'')}</span></span>
         <span class="m-macros">${Math.round(m.calories)} kcal · P${Math.round(m.protein)} C${Math.round(m.carbs)} F${Math.round(m.fat)}</span>
       </div>`).join('')
-    : `<div class="empty-note">No meals logged this day.</div>`;
+    : emptyState('No meals logged this day.', 'History fills in automatically as you log.');
 
   body.innerHTML = `
     <div class="hist-fact"><span class="f-k">Workout</span><span class="f-v ${workoutCls}">${escapeHtml(workout)}</span></div>
@@ -4082,6 +4116,7 @@ function favoriteFromItems(name, items){
 
 /* ---------- Meal preview / editor sheet ---------- */
 let pendingMeal = null;
+let lastAddedMealId = null; // newest meal gets an entrance animation on render
 
 function openMealPreview(items, { editingId=null, time=null, title='Meal preview' } = {}){
   pendingMeal = { items, editingId, time };
@@ -4155,7 +4190,7 @@ function commitPendingMeal(){
     }
   });
   const st = storableItems(known);
-  upsertMeal({
+  const meal = {
     id: pendingMeal.editingId || newMealId(),
     time: pendingMeal.time || nowTimeStr(),
     name: mealName(known),
@@ -4164,7 +4199,9 @@ function commitPendingMeal(){
     protein: round1(st.reduce((a,i)=>a+i.protein,0)),
     carbs: round1(st.reduce((a,i)=>a+i.carbs,0)),
     fat: round1(st.reduce((a,i)=>a+i.fat,0)),
-  });
+  };
+  upsertMeal(meal);
+  if(!editing) lastAddedMealId = meal.id;
   closeMealPreview();
   document.getElementById('meal-input').value = '';
   macroRefresh();
@@ -4195,6 +4232,7 @@ function handleMealInput(){
 function initMacros(){
   rebuildFoodIndex();
   seedFavorites();
+  buildMacroCards();
 
   document.getElementById('dash-macros').addEventListener('click', ()=>showTab('macros'));
   document.getElementById('dash-macros').addEventListener('keydown', e=>{
@@ -4238,7 +4276,7 @@ function initMacros(){
     if(f === 'qty' && item.food){
       // Re-derive servings and macros from the food's (possibly overridden) per-unit values.
       item.qty = v;
-      item.servings = servingsFor(item.food, v, item.unit === item.food.unit ? item.unit : item.unit).servings;
+      item.servings = servingsFor(item.food, v, item.unit).servings;
       const eff = effFood(item.food);
       item.calories = eff.calories * item.servings;
       item.protein = eff.protein * item.servings;
@@ -4266,19 +4304,25 @@ function initMacros(){
     const act = btn.dataset.act;
     if(act === 'edit'){ openMealEditor(meal); }
     if(act === 'dup'){
-      upsertMeal({ ...meal, id:newMealId(), time:nowTimeStr() });
+      const copy = { ...meal, id:newMealId(), time:nowTimeStr() };
+      upsertMeal(copy);
+      lastAddedMealId = copy.id;
       macroRefresh(); haptic(8); showToast('Meal duplicated', 'info');
     }
     if(act === 'fav'){
       const saved = getSavedMeals();
-      saved.push({ ...favoriteFromItems(meal.name, []), name:meal.name, items:meal.items,
+      saved.push({ id:newMealId(), name:meal.name, items:meal.items,
         calories:meal.calories, protein:meal.protein, carbs:meal.carbs, fat:meal.fat });
       storeSet('ledger-macro-saved', saved);
       macroRefresh(); showToast('Saved to favorites', 'info');
     }
     if(act === 'del'){
-      removeMeal(id);
-      macroRefresh(); showToast('Meal deleted');
+      // Slide the card out, then remove it from storage.
+      btn.closest('.meal-card').classList.add('meal-out');
+      setTimeout(()=>{
+        removeMeal(id);
+        macroRefresh(); showToast('Meal deleted');
+      }, 240);
     }
   });
 
@@ -4290,13 +4334,18 @@ function initMacros(){
     const fav = getSavedMeals().find(s=>s.id === id);
     if(!fav) return;
     if(btn.dataset.act === 'log'){
-      upsertMeal({ id:newMealId(), time:nowTimeStr(), name:fav.name, items:fav.items,
-        calories:fav.calories, protein:fav.protein, carbs:fav.carbs, fat:fav.fat });
+      const meal = { id:newMealId(), time:nowTimeStr(), name:fav.name, items:fav.items,
+        calories:fav.calories, protein:fav.protein, carbs:fav.carbs, fat:fav.fat };
+      upsertMeal(meal);
+      lastAddedMealId = meal.id;
       macroRefresh(); haptic(8); showToast(`Logged ${fav.name}`, 'info');
     }
     if(btn.dataset.act === 'unfav'){
-      storeSet('ledger-macro-saved', getSavedMeals().filter(s=>s.id !== id));
-      macroRefresh();
+      btn.closest('.meal-card').classList.add('meal-out');
+      setTimeout(()=>{
+        storeSet('ledger-macro-saved', getSavedMeals().filter(s=>s.id !== id));
+        macroRefresh();
+      }, 240);
     }
   });
 
