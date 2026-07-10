@@ -506,6 +506,52 @@
   }
   .badge.accent{ background:var(--accent-soft); color:var(--accent); }
   .badge.warn{ background:var(--warn-soft); color:var(--warn); }
+  .ex-menu-btn{
+    width:26px; height:26px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:var(--card-2);
+    color:var(--faint);
+    font-size:14px;
+    line-height:1;
+    cursor:pointer;
+    flex:0 0 auto;
+    transition:color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  }
+  .ex-menu-btn:active{ transform:scale(0.9); }
+  .ex-menu-btn:hover{ color:var(--text); border-color:var(--border-strong); }
+  .as-actions{ display:flex; flex-direction:column; gap:8px; margin-top:16px; }
+  .as-actions button{
+    border:1px solid var(--border-strong);
+    background:var(--card-2);
+    color:var(--text);
+    font-size:13.5px;
+    font-weight:600;
+    padding:11px 0;
+    border-radius:12px;
+    cursor:pointer;
+    transition:transform 0.15s ease;
+  }
+  .as-actions button:active{ transform:scale(0.97); }
+  .as-actions button.primary{ background:var(--accent); border-color:var(--accent); color:#0b0e13; font-weight:700; }
+  .as-actions button.danger-a{ color:var(--bad); }
+  .as-actions button.cancel{ background:none; border-color:var(--border); color:var(--faint); }
+  .exf-scroll{ max-height:62vh; overflow-y:auto; margin-top:12px; padding-right:2px; }
+  .lib-results{ display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+  .lib-results button{
+    text-align:left;
+    background:var(--card-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-size:12.5px;
+    padding:8px 11px;
+    border-radius:10px;
+    cursor:pointer;
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+  }
+  .lib-results button .lib-meta{ color:var(--faint); font-size:11px; white-space:nowrap; }
   .ex-rx{
     display:flex;
     flex-wrap:wrap;
@@ -1507,6 +1553,22 @@
       </div>
 
       <div class="card set-group">
+        <div class="card-label">Training plan</div>
+        <div class="set-line">
+          <span class="k">Restore removed exercise<span class="hint">put a removed exercise back on its day</span></span>
+          <button class="ghost-btn" id="btn-restore-ex">Restore</button>
+        </div>
+        <div class="set-line">
+          <span class="k">Reset one workout day<span class="hint">back to the built-in default for that day</span></span>
+          <button class="ghost-btn" id="btn-reset-day">Reset day</button>
+        </div>
+        <div class="set-line">
+          <span class="k danger">Reset full training split<span class="hint">removes all plan customizations — history is asked about separately</span></span>
+          <button class="ghost-btn danger" id="btn-reset-split">Reset</button>
+        </div>
+      </div>
+
+      <div class="card set-group">
         <div class="card-label">Macros <span class="mini">included in Export/Import backups</span></div>
         <div class="set-line">
           <span class="k">Calories goal</span>
@@ -1646,6 +1708,61 @@
     <div class="dialog-actions">
       <button id="cf-cancel">Cancel</button>
       <button class="confirm" id="cf-save">Save food</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ACTION SHEET ================= -->
+<div class="sheet center" id="action-sheet" role="dialog" aria-modal="true" aria-labelledby="as-title">
+  <div class="dialog-card" style="text-align:left">
+    <div class="dialog-title" id="as-title"></div>
+    <div class="dialog-msg" id="as-msg"></div>
+    <div class="as-actions" id="as-actions"></div>
+  </div>
+</div>
+
+<!-- ================= EXERCISE EDITOR ================= -->
+<div class="sheet" id="ex-sheet" role="dialog" aria-modal="true" aria-label="Exercise editor">
+  <div class="sheet-card left">
+    <div class="sheet-title" id="ex-sheet-title">Add exercise</div>
+    <div class="exf-scroll">
+      <div class="food-form">
+        <div id="exf-search-wrap">
+          <label>Search library <input id="exf-search" placeholder='try "press" or "curl"' autocomplete="off"></label>
+          <div class="lib-results" id="exf-results"></div>
+        </div>
+        <label>Name <input id="exf-name" placeholder="Exercise name"></label>
+        <div class="row2">
+          <label>Primary muscle <select id="exf-muscle"></select></label>
+          <label>Secondary (optional) <select id="exf-muscle2"></select></label>
+        </div>
+        <div class="row2">
+          <label>Type
+            <select id="exf-type"><option value="compound">Compound</option><option value="isolation">Isolation</option></select>
+          </label>
+          <label>Set style
+            <select id="exf-style"><option value="straight">Straight sets</option><option value="myo">Myo-reps</option><option value="superset">Superset</option></select>
+          </label>
+        </div>
+        <div class="row4">
+          <label>Sets <input id="exf-sets" inputmode="numeric" placeholder="3"></label>
+          <label>Rep min <input id="exf-repmin" inputmode="numeric" placeholder="8"></label>
+          <label>Rep max <input id="exf-repmax" inputmode="numeric" placeholder="12"></label>
+          <label>Rest (s) <input id="exf-rest" inputmode="numeric" placeholder="90"></label>
+        </div>
+        <div class="row4">
+          <label>Weight <input id="exf-weight" placeholder="135 lb"></label>
+          <label>RIR min <input id="exf-rirmin" inputmode="numeric" placeholder="0"></label>
+          <label>RIR max <input id="exf-rirmax" inputmode="numeric" placeholder="2"></label>
+          <label>Tag <input id="exf-tag" placeholder="optional"></label>
+        </div>
+        <label>Technique note <input id="exf-note" placeholder="optional cue"></label>
+        <label>Progression note <input id="exf-prog" placeholder="optional"></label>
+      </div>
+    </div>
+    <div class="dialog-actions" style="margin-top:14px">
+      <button id="exf-cancel">Cancel</button>
+      <button class="confirm" id="exf-save">Add Exercise</button>
     </div>
   </div>
 </div>
@@ -1790,8 +1907,20 @@ const DATA = {
 
 const MUSCLE_LABELS = {
   chest:"Chest", back:"Back", delts:"Delts", arms:"Arms",
-  hamstrings:"Hamstrings", quads:"Quads", calves:"Calves", abs:"Abs"
+  hamstrings:"Hamstrings", quads:"Quads", calves:"Calves", abs:"Abs",
+  lats:"Lats", frontdelts:"Front delts", sidedelts:"Side delts", reardelts:"Rear delts",
+  biceps:"Biceps", triceps:"Triceps", forearms:"Forearms", glutes:"Glutes", other:"Other"
 };
+// The 8 buckets the volume chart has always shown; finer-grained muscle
+// selections fold into them so analytics stay comparable over time.
+const CORE_MUSCLES = ['chest','back','delts','arms','hamstrings','quads','calves','abs'];
+const VOLUME_BUCKET = {
+  lats:'back', frontdelts:'delts', sidedelts:'delts', reardelts:'delts',
+  biceps:'arms', triceps:'arms', forearms:'arms'
+};
+function volBucket(m){ return VOLUME_BUCKET[m] || m; }
+const EX_MUSCLES = ['chest','back','lats','frontdelts','sidedelts','reardelts','biceps','triceps','forearms','quads','hamstrings','glutes','calves','abs','other'];
+const SECONDARY_VOLUME_FRACTION = 0.5;
 // Per-muscle weekly set targets [low, high] for the volume cards.
 const MUSCLE_TARGETS = {
   chest:[10,20], back:[10,20], delts:[10,20], arms:[10,20],
@@ -1813,7 +1942,7 @@ const LEDGER_KEYS = ['ledger-checks','ledger-weights','ledger-reps','ledger-last
   'ledger-habit-defs','ledger-habit-log','ledger-workout-log','ledger-history',
   'ledger-pr-history','ledger-session-log','ledger-settings',
   'ledger-macro-goals','ledger-macro-log','ledger-macro-saved','ledger-macro-foods',
-  'ledger-macro-settings','ledger-macro-analytics','ledger-day-notes'];
+  'ledger-macro-settings','ledger-macro-analytics','ledger-day-notes','ledger-plan'];
 
 // In-memory cache over localStorage. Aggregates like weekStats() read the
 // same keys dozens of times per interaction; parsing once per mutation
@@ -1868,6 +1997,7 @@ function cleanStorageValue(key, value){
     case 'ledger-macro-settings':
     case 'ledger-macro-analytics':
     case 'ledger-day-notes':
+    case 'ledger-plan':
       return cleanRecord(value);
     case 'ledger-pr-history':
     case 'ledger-macro-saved':
@@ -2007,6 +2137,170 @@ function volumeSets(ex){ return ex.effectiveSets ?? ex.sets; }
 function displaySets(ex){ return ex.displaySets ?? ex.sets; }
 
 /* =========================================================
+   Training plan — DATA stays the immutable default template;
+   ledger-plan overlays order, edits, additions and removals.
+   Built-in exercises keep their original "day-index" id (e.g.
+   "mon-0") forever, so every existing storage key stays valid.
+   ========================================================= */
+function newExId(){ return 'ex_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6); }
+function getPlan(){
+  const p = getRecord('ledger-plan');
+  if(!isPlainObject(p.days)) p.days = {};
+  if(!isPlainObject(p.defs)) p.defs = {};
+  if(!isPlainObject(p.removed)) p.removed = {};
+  return p;
+}
+function savePlan(p){ p.v = 1; storeSet('ledger-plan', p); }
+function builtinDef(id){
+  const m = /^(mon|tue|wed|thu|fri|sat|sun)-(\d+)$/.exec(id);
+  if(!m) return null;
+  const day = DATA[m[1]];
+  return (day && day.exercises && day.exercises[parseInt(m[2],10)]) || null;
+}
+function defaultDayIds(key){ return (DATA[key].exercises || []).map((_, i)=>`${key}-${i}`); }
+function restText(sec){
+  if(!sec) return '—';
+  return sec >= 60 ? `${(+(sec/60).toFixed(1)).toString().replace(/\.0$/,'')} min` : `${sec} sec`;
+}
+// Display strings derived from a structured (user-edited) definition.
+function structuredStrings(def){
+  const range = `${def.repMin}–${def.repMax}`;
+  const data = def.style === 'myo'
+    ? `Myo-reps: activation ${range} @ {{w}}, then ${Math.max(1,(def.sets||4)-1)} mini-sets`
+    : `${def.sets}×${range} — {{w}}`;
+  return { data, rir:`RIR ${def.rirMin}–${def.rirMax}`, rest: restText(def.restSec) };
+}
+function resolveEx(id){
+  const base = builtinDef(id);
+  const patch = getPlan().defs[id];
+  if(!base && !patch) return null;
+  const def = { ...(base || {}), ...(patch || {}), id };
+  if(def.structured){
+    Object.assign(def, structuredStrings(def));
+    if(def.style === 'myo'){
+      def.myo = true; def.superset = false;
+      def.displaySets = def.sets;
+      def.effectiveSets = Math.max(1, def.sets - 1);
+    } else {
+      def.myo = false; def.superset = def.style === 'superset';
+      def.displaySets = def.sets;
+      def.effectiveSets = def.sets;
+    }
+  }
+  return def;
+}
+function dayOrder(key){
+  const cfg = getPlan().days[key];
+  return (cfg && Array.isArray(cfg.order)) ? [...cfg.order] : defaultDayIds(key);
+}
+function planDay(key){
+  const tmpl = DATA[key];
+  if(!tmpl || tmpl.rest) return tmpl;
+  return { ...tmpl, exercises: dayOrder(key).map(resolveEx).filter(Boolean) };
+}
+function setDayOrder(key, order){
+  const p = getPlan();
+  p.days[key] = { ...(p.days[key] || {}), order };
+  savePlan(p);
+}
+function planMoveEx(key, id, delta){
+  const o = dayOrder(key);
+  const i = o.indexOf(id), j = i + delta;
+  if(i < 0 || j < 0 || j >= o.length) return;
+  [o[i], o[j]] = [o[j], o[i]];
+  setDayOrder(key, o);
+}
+function planInsertEx(key, def, atIdx){
+  const p = getPlan();
+  const id = def.id || newExId();
+  p.defs[id] = { ...def, id, structured:true, custom: !builtinDef(id) };
+  const o = dayOrder(key);
+  o.splice(atIdx == null ? o.length : atIdx, 0, id);
+  p.days[key] = { ...(p.days[key] || {}), order: o };
+  savePlan(p);
+  return id;
+}
+function planPatchEx(id, patch){
+  const p = getPlan();
+  p.defs[id] = { ...(p.defs[id] || {}), ...patch, id, structured:true };
+  savePlan(p);
+}
+function planRemoveEx(key, id){
+  const p = getPlan();
+  const ex = resolveEx(id);
+  p.days[key] = { ...(p.days[key] || {}), order: dayOrder(key).filter(x=>x !== id) };
+  p.removed[id] = { day:key, when:localDateStr(), name:(ex && ex.name) || id };
+  savePlan(p);
+}
+function planRestoreEx(id){
+  const p = getPlan();
+  const rem = p.removed[id];
+  if(!rem) return;
+  delete p.removed[id];
+  const o = dayOrder(rem.day);
+  if(!o.includes(id)) o.push(id);
+  p.days[rem.day] = { ...(p.days[rem.day] || {}), order: o };
+  savePlan(p);
+}
+function planResetDay(key){
+  const p = getPlan();
+  delete p.days[key];
+  defaultDayIds(key).forEach(id=>delete p.defs[id]);
+  Object.keys(p.removed).forEach(id=>{ if(p.removed[id].day === key) delete p.removed[id]; });
+  savePlan(p);
+}
+function planResetAll(){ storeSet('ledger-plan', { v:1, days:{}, defs:{}, removed:{} }); }
+// Delete every stored record tied to one exercise id (opt-in only).
+function purgeExerciseData(id){
+  ['ledger-history','ledger-lastperf','ledger-pr','ledger-mynotes'].forEach(k=>{
+    const rec = getRecord(k);
+    delete rec[id]; delete rec[id + '-video'];
+    storeSet(k, rec);
+  });
+  ['ledger-weights','ledger-reps','ledger-checks'].forEach(k=>{
+    const rec = getRecord(k);
+    Object.keys(rec).forEach(x=>{ if(x === id || x.startsWith(id + '-')) delete rec[x]; });
+    storeSet(k, rec);
+  });
+}
+// Any exercise def -> the structured shape the editor works with.
+function toStructured(ex){
+  const t = parseRepTarget(ex.data || '') || { lower:8, upper:12 };
+  const rm = /(\d+)\D+(\d+)/.exec(ex.rir || '') || [0, 0, 2];
+  return {
+    name: ex.name || '', muscle: ex.muscle || 'other', muscle2: ex.muscle2 || '',
+    type: ex.type || 'compound',
+    style: ex.myo ? 'myo' : (ex.superset ? 'superset' : 'straight'),
+    sets: displaySets(ex) || 3, repMin: t.lower, repMax: t.upper,
+    weight: ex.weight || '',
+    rirMin: parseInt(rm[1],10) || 0, rirMax: parseInt(rm[2],10) || 2,
+    restSec: ex.restSec || 90,
+    note: ex.note || '', prog: ex.prog || '', tag: ex.tag || '',
+    structured: true,
+  };
+}
+function exerciseLibrary(){
+  const map = new Map();
+  Object.keys(DATA).forEach(k=>(DATA[k].exercises || []).forEach((e, i)=>{
+    const id = `${k}-${i}`;
+    const cur = resolveEx(id) || e;
+    if(!map.has(cur.name)) map.set(cur.name, { ...toStructured(cur), id, builtin:true });
+  }));
+  Object.values(getPlan().defs).forEach(d=>{
+    if(d.custom && d.name) map.set(d.name, { ...d, builtin:false });
+  });
+  return [...map.values()];
+}
+function recentExercises(n){
+  const items = [];
+  Object.entries(getHistory()).forEach(([id, list])=>{
+    const last = list[list.length-1];
+    if(last && last.name) items.push({ id, name:last.name, date:last.date });
+  });
+  return items.sort((a,b)=>b.date.localeCompare(a.date)).slice(0, n || 5);
+}
+
+/* =========================================================
    Settings (theme, accent, sound, motion, units)
    ========================================================= */
 function applySettings(){
@@ -2071,8 +2365,9 @@ function initSettingsView(){
 
   document.getElementById('btn-reset-today').addEventListener('click', ()=>{
     const checks = getChecks();
-    const today = getTodayKey();
-    Object.keys(checks).forEach(k=>{ if(k.startsWith(today + '-')) delete checks[k]; });
+    const day = planDay(getTodayKey());
+    const ids = (day.exercises || []).map(e=>e.id);
+    Object.keys(checks).forEach(k=>{ if(ids.some(id=>k.startsWith(id + '-'))) delete checks[k]; });
     storeSet('ledger-checks', checks);
     storeRemove('ledger-session');
     updateSessionPauseBtn();
@@ -2149,18 +2444,23 @@ function initSettingsView(){
    ========================================================= */
 function computeVolume(){
   const vol = {};
-  Object.values(DATA).forEach(day=>{
+  Object.keys(DATA).forEach(k=>{
+    const day = planDay(k);
     if(!day.exercises) return;
-    day.exercises.forEach(ex=>{ vol[ex.muscle] = (vol[ex.muscle]||0) + volumeSets(ex); });
+    day.exercises.forEach(ex=>{
+      vol[volBucket(ex.muscle)] = (vol[volBucket(ex.muscle)]||0) + volumeSets(ex);
+      if(ex.muscle2) vol[volBucket(ex.muscle2)] = (vol[volBucket(ex.muscle2)]||0) + volumeSets(ex) * SECONDARY_VOLUME_FRACTION;
+    });
   });
   return vol;
 }
 function renderVolume(){
   const vol = computeVolume();
   const el = document.getElementById('vol-chart');
-  el.innerHTML = Object.keys(MUSCLE_LABELS).map(m=>{
-    const count = vol[m] || 0;
-    const [lo, hi] = MUSCLE_TARGETS[m] || [10,20];
+  const rows = CORE_MUSCLES.concat(Object.keys(vol).filter(m=>!CORE_MUSCLES.includes(m) && vol[m] > 0));
+  el.innerHTML = rows.map(m=>{
+    const count = round1(vol[m] || 0);
+    const [lo, hi] = MUSCLE_TARGETS[m] || [8,16];
     let status, chipCls, rec, fillCls;
     if(count < lo){ status='Low'; chipCls='low'; fillCls='warn'; rec='Room to add a set or two if recovery allows.'; }
     else if(count > hi){ status='High'; chipCls='high'; fillCls='bad'; rec='Watch recovery — consider trimming a set.'; }
@@ -2187,29 +2487,29 @@ function renderVolume(){
    ========================================================= */
 let currentDayKey = null;
 
-function fillWeights(dayKey, idx, ex){
+function fillWeights(ex){
   return ex.data.replace(/\{\{(w2?)\}\}/g, (_, token)=>{
-    const key = `${dayKey}-${idx}-${token}`;
+    const key = `${ex.id}-${token}`;
     const fallback = token === 'w' ? ex.weight : ex.weight2;
     const val = getWeightValue(key, fallback);
     return `<input class="weight-input" data-key="${key}" value="${escapeHtml(val)}" placeholder="weight" aria-label="Working weight">`;
   });
 }
 
-function exerciseChecked(dayKey, idx, ex){
+function exerciseChecked(ex){
   const checks = getChecks();
   const wk = weekKey();
   const n = displaySets(ex);
   let done = 0;
   for(let i=0; i<n; i++){
-    const e = checks[`${dayKey}-${idx}-${i}`];
+    const e = checks[`${ex.id}-${i}`];
     if(e && e.v && e.wk === wk) done++;
   }
   return { done, total:n, complete: n>0 && done===n };
 }
 
-function progressionBadge(dayKey, idx, target){
-  const last = getLastPerf(`${dayKey}-${idx}`);
+function progressionBadge(exId, target){
+  const last = getLastPerf(exId);
   if(!last || !last.reps || !last.reps.length) return '';
   const reps = last.reps.map(r=>parseInt(r,10)).filter(n=>!isNaN(n));
   if(!reps.length) return '';
@@ -2220,8 +2520,7 @@ function progressionBadge(dayKey, idx, target){
   return `<div class="progression hold">→ Hit the target on some sets last time — keep the same weight.</div>`;
 }
 
-function perfInfoHtml(dayKey, idx){
-  const key = `${dayKey}-${idx}`;
+function perfInfoHtml(key){
   const last = getLastPerf(key);
   const pr = getPR(key);
   if(!last && !pr) return '';
@@ -2237,8 +2536,7 @@ function perfInfoHtml(dayKey, idx){
   return `<div class="perf-info">${parts.join('')}</div>`;
 }
 
-function historyFoldHtml(dayKey, idx){
-  const key = `${dayKey}-${idx}`;
+function historyFoldHtml(key){
   const hist = (getHistory()[key] || []).slice(-4).reverse();
   if(!hist.length) return '';
   const lines = hist.map(h=>{
@@ -2265,17 +2563,16 @@ function historyFoldHtml(dayKey, idx){
   return `<details class="fold"><summary>History</summary><div class="hist-lines">${lines}${bestLine}${deltaLine}</div></details>`;
 }
 
-function computeInsightsHtml(dayKey, idx, target){
-  return perfInfoHtml(dayKey, idx) + (target ? progressionBadge(dayKey, idx, target) : '');
+function computeInsightsHtml(exId, target){
+  return perfInfoHtml(exId) + (target ? progressionBadge(exId, target) : '');
 }
 
 function refreshInsights(card){
-  const dayKey = card.dataset.day;
-  const idx = parseInt(card.dataset.idx, 10);
-  const ex = DATA[dayKey].exercises[idx];
+  const ex = planDay(card.dataset.day).exercises[parseInt(card.dataset.idx, 10)];
+  if(!ex) return;
   const target = ex.myo ? null : parseRepTarget(ex.data);
   card.querySelectorAll('.perf-info, .progression').forEach(el=>el.remove());
-  const html = computeInsightsHtml(dayKey, idx, target);
+  const html = computeInsightsHtml(ex.id, target);
   if(html) card.querySelector('.sets').insertAdjacentHTML('beforebegin', html);
 }
 
@@ -2288,47 +2585,50 @@ function exerciseCard(dayKey, ex, idx){
   const tag = ex.myo ? 'Myo-reps' : (ex.superset ? 'Superset' : '');
   const setCount = displaySets(ex);
   const target = ex.myo ? null : parseRepTarget(ex.data);
-  const state = exerciseChecked(dayKey, idx, ex);
-  const userExpanded = cardExpanded.get(`${dayKey}-${idx}`) === true;
+  const state = exerciseChecked(ex);
+  const userExpanded = cardExpanded.get(ex.id) === true;
   const collapsed = state.complete && !userExpanded;
   const boxes = Array.from({length:setCount}).map((_,i)=>{
-    const key = `${dayKey}-${idx}-${i}`;
+    const key = `${ex.id}-${i}`;
     const repsInput = target ? `<input class="reps-input" data-key="${key}-r" value="${escapeHtml(getRepValue(key+'-r'))}" placeholder="${target.upper}" inputmode="numeric" aria-label="Reps for set ${i+1}">` : '';
     return `<div class="set-unit">
       <button type="button" class="set-box" data-key="${key}" aria-pressed="false" aria-label="Set ${i+1}">${i+1}</button>
       ${repsInput}
     </div>`;
   }).join('');
-  const insights = computeInsightsHtml(dayKey, idx, target);
-  const noteKey = `${dayKey}-${idx}`;
+  const insights = computeInsightsHtml(ex.id, target);
+  const noteKey = ex.id;
   const myNote = getMyNote(noteKey);
   const rawVideo = getMyNote(noteKey + '-video');
   const videoUrl = safeHttpUrl(rawVideo); // only render real http(s) links
   const timer = ex.restSec ? `<div class="rest-timer"><button class="timer-btn" data-key="${noteKey}" data-sec="${ex.restSec}">Rest ${formatMMSS(ex.restSec)}</button></div>` : '';
-  return `<div class="exercise ${cls} ${state.complete ? 'complete' : ''} ${collapsed ? 'collapsed' : ''}" data-day="${dayKey}" data-idx="${idx}">
+  return `<div class="exercise ${cls} ${state.complete ? 'complete' : ''} ${collapsed ? 'collapsed' : ''}" data-day="${dayKey}" data-idx="${idx}" data-exid="${escapeHtml(ex.id)}">
     <div class="ex-top">
       <div>
-        <div class="ex-name">${ex.name}</div>
+        <div class="ex-name">${escapeHtml(ex.name)}</div>
         <div class="ex-summary">✓ ${state.total} sets done · tap to expand</div>
       </div>
       <div class="ex-badges">
-        <span class="badge">${MUSCLE_LABELS[ex.muscle] || ex.muscle}</span>
+        <span class="badge">${MUSCLE_LABELS[ex.muscle] || escapeHtml(ex.muscle)}</span>
         ${tag ? `<span class="badge ${ex.myo ? 'warn' : 'accent'}">${tag}</span>` : ''}
+        ${ex.tag ? `<span class="badge accent">${escapeHtml(ex.tag)}</span>` : ''}
+        <button type="button" class="ex-menu-btn" aria-label="Options for ${escapeHtml(ex.name)}">⋯</button>
       </div>
     </div>
     <div class="ex-body"><div class="ex-body-inner">
     <div class="ex-rx">
-      <b>${fillWeights(dayKey, idx, ex)}</b>
+      <b>${fillWeights(ex)}</b>
       <span class="rx-meta">${ex.rir}</span>
       ${ex.rest && ex.rest !== '—' ? `<span class="rx-meta">rest ${ex.rest}</span>` : ''}
     </div>
     ${insights}
     <div class="sets">${boxes}</div>
     ${timer}
-    ${historyFoldHtml(dayKey, idx)}
+    ${historyFoldHtml(ex.id)}
     <details class="fold"${myNote ? ' open' : ''}>
       <summary>Notes</summary>
-      ${ex.note ? `<div class="ex-note"><strong>Technique —</strong> ${ex.note}</div>` : ''}
+      ${ex.note ? `<div class="ex-note"><strong>Technique —</strong> ${escapeHtml(ex.note)}</div>` : ''}
+      ${ex.prog ? `<div class="ex-note"><strong>Progression —</strong> ${escapeHtml(ex.prog)}</div>` : ''}
       <div class="my-note">
         <input class="note-input" data-key="${noteKey}" value="${escapeHtml(myNote)}" placeholder="Add a note… (seat height, cues, how it felt)" aria-label="Personal note">
         <input class="note-input" data-key="${noteKey}-video" value="${escapeHtml(rawVideo)}" placeholder="▶ Form video link (optional)" aria-label="Form video link">
@@ -2340,7 +2640,7 @@ function exerciseCard(dayKey, ex, idx){
 }
 
 function renderDay(key){
-  const day = DATA[key];
+  const day = planDay(key);
   document.getElementById('workout-day-title').textContent = day.rest ? 'Rest day' : day.title;
   if(day.rest){
     return `<div class="rest-day">
@@ -2359,7 +2659,8 @@ function renderDay(key){
       <div class="pill-track" style="height:8px"><div class="pill-fill" id="day-progress-fill" style="width:0%"></div></div>
     </div>
     ${readiness}
-    ${cards}`;
+    ${cards}
+    <button class="ghost-btn" id="add-ex-btn" style="width:100%;padding:11px;margin-top:2px">+ Add exercise</button>`;
 }
 
 function loadChecks(){
@@ -2424,7 +2725,7 @@ function handleExerciseCompletion(card, dayKey, idx, ex){
   const boxes = [...card.querySelectorAll('.set-box')];
   if(!boxes.length || !boxes.every(b=>b.classList.contains('done'))) return;
 
-  const key = `${dayKey}-${idx}`;
+  const key = ex.id;
   const weightInput = card.querySelector('.weight-input');
   const weight = weightInput ? weightInput.value.trim() : '';
   const reps = [...card.querySelectorAll('.reps-input')].map(inp=>inp.value.trim()).filter(v=>v !== '');
@@ -2502,11 +2803,11 @@ function handleExerciseCompletion(card, dayKey, idx, ex){
    Day / week aggregate helpers
    ========================================================= */
 function dayProgress(key){
-  const day = DATA[key];
+  const day = planDay(key);
   if(!day || !day.exercises) return null;
   let total = 0, done = 0;
-  day.exercises.forEach((ex, idx)=>{
-    const s = exerciseChecked(key, idx, ex);
+  day.exercises.forEach(ex=>{
+    const s = exerciseChecked(ex);
     total += s.total; done += s.done;
   });
   return { total, done, complete: total>0 && done===total };
@@ -2594,12 +2895,11 @@ function nextWorkoutKey(){
 }
 
 function estRemainingMin(){
-  const key = getTodayKey();
-  const day = DATA[key];
+  const day = planDay(getTodayKey());
   if(!day || day.rest) return null;
   let sec = 0;
-  day.exercises.forEach((ex, idx)=>{
-    const s = exerciseChecked(key, idx, ex);
+  day.exercises.forEach(ex=>{
+    const s = exerciseChecked(ex);
     const remaining = s.total - s.done;
     sec += remaining * (40 + (ex.restSec || 60));
   });
@@ -3289,10 +3589,11 @@ function renderProgress(){
   const freq = {};
   entries.forEach(h=>{
     if(weekKey(new Date(h.date + 'T12:00:00')) !== wkNow) return;
-    freq[h.muscle] = freq[h.muscle] || new Set();
-    freq[h.muscle].add(h.date);
+    const b = volBucket(h.muscle);
+    freq[b] = freq[b] || new Set();
+    freq[b].add(h.date);
   });
-  const freqBars = Object.keys(MUSCLE_LABELS).map(m=>({ label:MUSCLE_LABELS[m].slice(0,4), value:(freq[m]||new Set()).size }));
+  const freqBars = CORE_MUSCLES.map(m=>({ label:MUSCLE_LABELS[m].slice(0,4), value:(freq[m]||new Set()).size }));
   const freqChart = svgBarChart(freqBars, { max:4 });
 
   /* Monthly consistency grid (last 28 days) */
@@ -3314,9 +3615,10 @@ function renderProgress(){
   const muscleWk = {};
   entries.forEach(h=>{
     if(weekKey(new Date(h.date + 'T12:00:00')) !== wkNow2) return;
-    muscleWk[h.muscle] = (muscleWk[h.muscle]||0) + (h.reps ? h.reps.length : 0);
+    const b = volBucket(h.muscle);
+    muscleWk[b] = (muscleWk[b]||0) + (h.reps ? h.reps.length : 0);
   });
-  const muscleVolBars = Object.keys(MUSCLE_LABELS).map(m=>{
+  const muscleVolBars = CORE_MUSCLES.map(m=>{
     const v = muscleWk[m] || 0;
     const [lo, hi] = MUSCLE_TARGETS[m] || [10,20];
     return { label:MUSCLE_LABELS[m].slice(0,4), value:v, cls:(v >= lo && v <= hi) ? 'good' : '' };
@@ -3787,6 +4089,289 @@ function importData(file){
     setTimeout(()=>location.reload(), 900);
   };
   reader.readAsText(file);
+}
+
+/* =========================================================
+   Exercise management (menu, editor, resets)
+   ========================================================= */
+function refreshAfterPlanChange(){
+  renderVolume();
+  if(currentDayKey) showDay(currentDayKey);
+  updateNavStates();
+  renderDashboard();
+  renderHabits();
+}
+
+let asResolve = null;
+function actionSheet({ title, message = '', actions }){
+  return new Promise(res=>{
+    asResolve = res;
+    document.getElementById('as-title').textContent = title;
+    const msg = document.getElementById('as-msg');
+    msg.textContent = message;
+    msg.style.display = message ? '' : 'none';
+    document.getElementById('as-actions').innerHTML = actions.map(a=>
+      `<button data-v="${escapeHtml(a.value)}" class="${a.primary ? 'primary' : ''} ${a.danger ? 'danger-a' : ''}">${escapeHtml(a.label)}</button>`
+    ).join('') + `<button class="cancel" data-v="">Cancel</button>`;
+    document.getElementById('action-sheet').classList.add('open');
+  });
+}
+function resolveActionSheet(v){
+  document.getElementById('action-sheet').classList.remove('open');
+  if(asResolve){ asResolve(v || null); asResolve = null; }
+}
+
+async function openExMenu(dayKey, exId, idx){
+  const ex = resolveEx(exId);
+  if(!ex) return;
+  const total = dayOrder(dayKey).length;
+  const actions = [{ label:'Edit', value:'edit' }];
+  if(idx > 0) actions.push({ label:'Move up', value:'up' });
+  if(idx < total - 1) actions.push({ label:'Move down', value:'down' });
+  actions.push(
+    { label:'Duplicate', value:'dup' },
+    { label:'Replace…', value:'replace' },
+    { label:'Remove…', value:'remove', danger:true }
+  );
+  const v = await actionSheet({ title: ex.name, actions });
+  if(v === 'edit') openExSheet({ mode:'edit', dayKey, exId });
+  if(v === 'up' || v === 'down'){
+    planMoveEx(dayKey, exId, v === 'up' ? -1 : 1);
+    refreshAfterPlanChange();
+  }
+  if(v === 'dup'){
+    const def = toStructured(ex);
+    def.name = ex.name + ' (copy)';
+    planInsertEx(dayKey, def, idx + 1);
+    refreshAfterPlanChange();
+    showToast('Exercise duplicated', 'info');
+  }
+  if(v === 'replace') openExSheet({ mode:'replace', dayKey, exId });
+  if(v === 'remove'){
+    const c = await actionSheet({
+      title:'Remove this exercise from this workout day?',
+      message:'Its logged history stays saved unless you also delete it. Removed exercises can be restored from Settings.',
+      actions:[
+        { label:'Remove from workout only', value:'remove', primary:true },
+        { label:'Remove and delete its stored history', value:'purge', danger:true },
+      ]
+    });
+    if(!c) return;
+    planRemoveEx(dayKey, exId);
+    if(c === 'purge') purgeExerciseData(exId);
+    refreshAfterPlanChange();
+    showToast(c === 'purge' ? 'Removed — history deleted' : 'Removed — history kept');
+  }
+}
+
+/* ----- editor sheet ----- */
+const EXF_MUSCLE_OPTS = ['chest','back','lats','delts','frontdelts','sidedelts','reardelts','arms','biceps','triceps','forearms','quads','hamstrings','glutes','calves','abs','other'];
+let exSheetCtx = null;
+let libCache = [];
+function exfEl(id){ return document.getElementById('exf-' + id); }
+function fillExForm(def){
+  exfEl('name').value = def.name || '';
+  exfEl('muscle').value = EXF_MUSCLE_OPTS.includes(def.muscle) ? def.muscle : 'other';
+  exfEl('muscle2').value = EXF_MUSCLE_OPTS.includes(def.muscle2) ? def.muscle2 : '';
+  exfEl('type').value = def.type === 'isolation' ? 'isolation' : 'compound';
+  exfEl('style').value = ['myo','superset'].includes(def.style) ? def.style : 'straight';
+  exfEl('sets').value = def.sets || 3;
+  exfEl('repmin').value = def.repMin || 8;
+  exfEl('repmax').value = def.repMax || 12;
+  exfEl('rest').value = def.restSec || 90;
+  exfEl('weight').value = def.weight || '';
+  exfEl('rirmin').value = def.rirMin ?? 0;
+  exfEl('rirmax').value = def.rirMax ?? 2;
+  exfEl('tag').value = def.tag || '';
+  exfEl('note').value = def.note || '';
+  exfEl('prog').value = def.prog || '';
+}
+function openExSheet(ctx){
+  exSheetCtx = ctx;
+  const titles = { add:'Add exercise', edit:'Edit exercise', replace:'Replace exercise' };
+  document.getElementById('ex-sheet-title').textContent = titles[ctx.mode];
+  document.getElementById('exf-save').textContent =
+    ctx.mode === 'add' ? 'Add Exercise' : (ctx.mode === 'replace' ? 'Replace' : 'Save changes');
+  document.getElementById('exf-search-wrap').style.display = ctx.mode === 'edit' ? 'none' : '';
+  exfEl('search').value = '';
+  if(ctx.mode === 'edit' || ctx.mode === 'replace'){
+    const def = toStructured(resolveEx(ctx.exId));
+    ctx.originalName = def.name;
+    fillExForm(ctx.mode === 'replace' ? { ...def, name:'' } : def);
+  } else {
+    fillExForm({ muscle:'chest', type:'compound', style:'straight', sets:3, repMin:8, repMax:12, rirMin:0, rirMax:2, restSec:90 });
+  }
+  if(ctx.mode !== 'edit') renderLibResults('');
+  document.getElementById('ex-sheet').classList.add('open');
+}
+function closeExSheet(){
+  document.getElementById('ex-sheet').classList.remove('open');
+  exSheetCtx = null;
+}
+function renderLibResults(q){
+  const el = document.getElementById('exf-results');
+  const query = q.trim().toLowerCase();
+  if(!query){
+    libCache = recentExercises(5)
+      .map(r=>{ const ex = resolveEx(r.id); return ex ? { ...toStructured(ex), _meta:'recent' } : null; })
+      .filter(Boolean);
+  } else {
+    libCache = exerciseLibrary()
+      .filter(x=>x.name.toLowerCase().includes(query))
+      .slice(0, 8)
+      .map(x=>({ ...x, _meta: x.builtin === false ? 'custom' : '' }));
+  }
+  el.innerHTML = libCache.map((x, i)=>
+    `<button type="button" data-lib="${i}"><span>${escapeHtml(x.name)}</span><span class="lib-meta">${MUSCLE_LABELS[x.muscle] || escapeHtml(x.muscle)}${x._meta ? ' · ' + x._meta : ''}</span></button>`
+  ).join('');
+}
+function collectExForm(){
+  const num = (id, d)=>{ const v = parseInt(exfEl(id).value, 10); return isNaN(v) ? d : v; };
+  return {
+    name: exfEl('name').value.trim(),
+    muscle: exfEl('muscle').value,
+    muscle2: exfEl('muscle2').value || '',
+    type: exfEl('type').value,
+    style: exfEl('style').value,
+    sets: Math.max(1, num('sets', 3)),
+    repMin: Math.max(1, num('repmin', 8)),
+    repMax: Math.max(1, num('repmax', 12)),
+    restSec: Math.max(5, num('rest', 90)),
+    weight: exfEl('weight').value.trim(),
+    rirMin: Math.max(0, num('rirmin', 0)),
+    rirMax: Math.max(0, num('rirmax', 2)),
+    tag: exfEl('tag').value.trim(),
+    note: exfEl('note').value.trim(),
+    prog: exfEl('prog').value.trim(),
+    structured: true,
+  };
+}
+// Replace-in-place with a fresh id: old exercise goes to the removed list
+// (history intact), new def takes its exact slot.
+function swapAtPosition(dayKey, oldId, def){
+  const idx = dayOrder(dayKey).indexOf(oldId);
+  planRemoveEx(dayKey, oldId);
+  planInsertEx(dayKey, def, idx < 0 ? null : idx);
+}
+async function saveExSheet(){
+  const def = collectExForm();
+  if(!def.name){ showToast('Exercise name is required'); return; }
+  if(def.repMax < def.repMin){ showToast('Rep max must be ≥ rep min'); return; }
+  if(def.rirMax < def.rirMin){ showToast('RIR max must be ≥ RIR min'); return; }
+  const ctx = exSheetCtx;
+  closeExSheet();
+  if(ctx.mode === 'add'){
+    planInsertEx(ctx.dayKey, def);
+    refreshAfterPlanChange();
+    showToast('Exercise added', 'info');
+    return;
+  }
+  if(ctx.mode === 'edit'){
+    if(def.name !== ctx.originalName){
+      const v = await actionSheet({
+        title:'Keep linked history?',
+        message:`You renamed "${ctx.originalName}" to "${def.name}". Keep its logged history linked, or start fresh?`,
+        actions:[
+          { label:'Keep linked history', value:'keep', primary:true },
+          { label:'Start fresh history', value:'fresh' },
+        ]
+      });
+      if(!v) return;
+      if(v === 'fresh') swapAtPosition(ctx.dayKey, ctx.exId, def);
+      else planPatchEx(ctx.exId, def);
+    } else {
+      planPatchEx(ctx.exId, def);
+    }
+    refreshAfterPlanChange();
+    showToast('Exercise updated', 'info');
+    return;
+  }
+  if(ctx.mode === 'replace'){
+    const v = await actionSheet({
+      title:'History for the replacement?',
+      message:`Replacing "${ctx.originalName}" with "${def.name}". Same slot either way.`,
+      actions:[
+        { label:'Keep existing history linked', value:'keep', primary:true },
+        { label:'Start fresh history', value:'fresh' },
+      ]
+    });
+    if(!v) return;
+    if(v === 'keep') planPatchEx(ctx.exId, def);
+    else swapAtPosition(ctx.dayKey, ctx.exId, def);
+    refreshAfterPlanChange();
+    showToast('Exercise replaced', 'info');
+  }
+}
+
+function initExManagement(){
+  const opts = EXF_MUSCLE_OPTS.map(m=>`<option value="${m}">${MUSCLE_LABELS[m] || m}</option>`).join('');
+  exfEl('muscle').innerHTML = opts;
+  exfEl('muscle2').innerHTML = `<option value="">None</option>` + opts;
+
+  document.getElementById('as-actions').addEventListener('click', e=>{
+    const btn = e.target.closest('button');
+    if(btn) resolveActionSheet(btn.dataset.v);
+  });
+  document.getElementById('action-sheet').addEventListener('click', e=>{
+    if(e.target === e.currentTarget) resolveActionSheet(null);
+  });
+  document.getElementById('exf-save').addEventListener('click', saveExSheet);
+  document.getElementById('exf-cancel').addEventListener('click', closeExSheet);
+  document.getElementById('ex-sheet').addEventListener('click', e=>{
+    if(e.target === e.currentTarget) closeExSheet();
+  });
+  exfEl('search').addEventListener('input', ()=>renderLibResults(exfEl('search').value));
+  document.getElementById('exf-results').addEventListener('click', e=>{
+    const btn = e.target.closest('button[data-lib]');
+    if(!btn) return;
+    const item = libCache[parseInt(btn.dataset.lib, 10)];
+    if(item) fillExForm(item);
+  });
+
+  document.getElementById('btn-restore-ex').addEventListener('click', async ()=>{
+    const removed = Object.entries(getPlan().removed);
+    if(!removed.length){ showToast('No removed exercises to restore'); return; }
+    const v = await actionSheet({
+      title:'Restore removed exercise',
+      actions: removed.slice(-8).reverse().map(([id, r])=>({ label:`${r.name} → ${DAY_NAMES[r.day] || r.day}`, value:id }))
+    });
+    if(!v) return;
+    planRestoreEx(v);
+    refreshAfterPlanChange();
+    showToast('Exercise restored', 'info');
+  });
+  document.getElementById('btn-reset-day').addEventListener('click', async ()=>{
+    const days = Object.keys(DATA).filter(k=>!DATA[k].rest);
+    const v = await actionSheet({
+      title:'Reset which day?',
+      message:'That day returns to the built-in default. History is not touched.',
+      actions: days.map(k=>({ label:`${DAY_NAMES[k]} — ${DATA[k].title}`, value:k }))
+    });
+    if(!v) return;
+    planResetDay(v);
+    refreshAfterPlanChange();
+    showToast(`${DAY_NAMES[v]} reset to default`, 'info');
+  });
+  document.getElementById('btn-reset-split').addEventListener('click', async ()=>{
+    const ok = await appConfirm({
+      title:'Reset full training split?',
+      message:'All added, edited, reordered, and removed exercises return to the built-in defaults.',
+      confirmLabel:'Reset split', danger:true
+    });
+    if(!ok) return;
+    planResetAll();
+    refreshAfterPlanChange();
+    const wipe = await appConfirm({
+      title:'Also erase performance history?',
+      message:'Logged history, PRs, and the PR timeline. Usually you want to keep this.',
+      confirmLabel:'Erase history', danger:true
+    });
+    if(wipe){
+      ['ledger-history','ledger-lastperf','ledger-pr','ledger-pr-history'].forEach(k=>storeRemove(k));
+      refreshAfterPlanChange();
+    }
+    showToast('Training split reset', 'info');
+  });
 }
 
 /* =========================================================
@@ -4611,6 +5196,7 @@ function init(){
   initSupplements();
   initHabits();
   initSettingsView();
+  initExManagement();
   initMacros();
   renderDashMacros();
   initRestSheet();
@@ -4636,7 +5222,8 @@ function init(){
       const card = box.closest('.exercise');
       const dayKey = card.dataset.day;
       const idx = parseInt(card.dataset.idx, 10);
-      const ex = DATA[dayKey].exercises[idx];
+      const ex = planDay(dayKey).exercises[idx];
+      if(!ex) return;
       const wasDone = box.classList.contains('done');
       box.classList.toggle('done');
       const nowDone = box.classList.contains('done');
@@ -4657,7 +5244,7 @@ function init(){
       maybeCelebrate(dayKey);
       // Auto-collapse the finished card and glide to the next exercise,
       // unless the user has explicitly expanded this card.
-      if(allDone && cardExpanded.get(`${dayKey}-${idx}`) !== true){
+      if(allDone && cardExpanded.get(ex.id) !== true){
         setTimeout(()=>{
           if(!card.isConnected || !card.classList.contains('complete')) return;
           card.classList.add('collapsed');
@@ -4671,20 +5258,29 @@ function init(){
       }
       return;
     }
+    const menuBtn = e.target.closest('.ex-menu-btn');
+    if(menuBtn){
+      const card = menuBtn.closest('.exercise');
+      openExMenu(card.dataset.day, card.dataset.exid, parseInt(card.dataset.idx, 10));
+      return;
+    }
+    if(e.target.closest('#add-ex-btn')){
+      openExSheet({ mode:'add', dayKey: currentDayKey });
+      return;
+    }
     const top = e.target.closest('.ex-top');
-    if(top && !e.target.closest('input, a')){
+    if(top && !e.target.closest('input, a, .ex-menu-btn')){
       const card = top.closest('.exercise');
-      const key = `${card.dataset.day}-${card.dataset.idx}`;
       const nowCollapsed = !card.classList.contains('collapsed');
       card.classList.toggle('collapsed', nowCollapsed);
-      cardExpanded.set(key, !nowCollapsed);
+      cardExpanded.set(card.dataset.exid, !nowCollapsed);
       return;
     }
     const tbtn = e.target.closest('.timer-btn');
     if(tbtn){
       const card = tbtn.closest('.exercise');
-      const ex = DATA[card.dataset.day].exercises[parseInt(card.dataset.idx,10)];
-      startRestTimer(tbtn.dataset.key, parseInt(tbtn.dataset.sec,10), tbtn, ex.name);
+      const ex = planDay(card.dataset.day).exercises[parseInt(card.dataset.idx,10)];
+      if(ex) startRestTimer(tbtn.dataset.key, parseInt(tbtn.dataset.sec,10), tbtn, ex.name);
     }
   });
   content.addEventListener('input', e=>{
@@ -4751,6 +5347,8 @@ function init(){
   document.addEventListener('keydown', e=>{
     if(e.key !== 'Escape') return;
     if(document.getElementById('confirm-sheet').classList.contains('open')) resolveConfirm(false);
+    else if(document.getElementById('action-sheet').classList.contains('open')) resolveActionSheet(null);
+    else if(document.getElementById('ex-sheet').classList.contains('open')) closeExSheet();
     else if(document.getElementById('meal-sheet').classList.contains('open')) closeMealPreview();
     else if(document.getElementById('food-sheet').classList.contains('open')) document.getElementById('food-sheet').classList.remove('open');
     else if(document.getElementById('rest-sheet').classList.contains('open')) closeRestSheet();
