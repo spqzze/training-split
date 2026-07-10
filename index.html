@@ -88,6 +88,7 @@
     position:fixed;
     left:0; right:0; bottom:0;
     z-index:50;
+    background:var(--bg); /* fallback for browsers without color-mix */
     background:color-mix(in srgb, var(--bg) 82%, transparent);
     backdrop-filter:blur(18px);
     -webkit-backdrop-filter:blur(18px);
@@ -1807,16 +1808,28 @@ const ACCENTS = { indigo:'#7c9aff', teal:'#4ecdc4', coral:'#ff8f70', violet:'#b7
 /* =========================================================
    Storage core — safe JSON get/set + schema versioning
    ========================================================= */
+// In-memory cache over localStorage. Aggregates like weekStats() read the
+// same keys dozens of times per interaction; parsing once per mutation
+// instead of once per read keeps set-taps snappy on older phones.
+const storeCache = new Map();
 function storeGet(key, fallback){
+  if(storeCache.has(key)) return storeCache.get(key);
   try{
     const raw = localStorage.getItem(key);
     if(raw === null) return fallback;
-    return JSON.parse(raw);
+    const val = JSON.parse(raw);
+    storeCache.set(key, val);
+    return val;
   } catch(e){ return fallback; }
 }
 function storeSet(key, value){
+  storeCache.set(key, value);
   try{ localStorage.setItem(key, JSON.stringify(value)); }
   catch(e){ /* quota exceeded or private mode — keep the app alive */ }
+}
+function storeRemove(key){
+  storeCache.delete(key);
+  localStorage.removeItem(key);
 }
 
 // Validate known keys; drop any that fail to parse so one corrupt save
@@ -1902,11 +1915,12 @@ function localDateStr(date){
 }
 function getTodayKey(){ return DAY_ORDER[new Date().getDay()]; }
 function weekKey(d){
+  // Local-time Monday of the given date. (toISOString would skew the date
+  // for timezones ahead of UTC.)
   const date = d ? new Date(d) : new Date();
   const day = date.getDay();
   date.setDate(date.getDate() + (day === 0 ? -6 : 1 - day));
-  date.setHours(0,0,0,0);
-  return date.toISOString().slice(0,10);
+  return localDateStr(date);
 }
 function formatMMSS(totalSec){
   const m = Math.floor(totalSec/60), s = Math.max(0, totalSec % 60);
@@ -2005,7 +2019,7 @@ function initSettingsView(){
     const today = getTodayKey();
     Object.keys(checks).forEach(k=>{ if(k.startsWith(today + '-')) delete checks[k]; });
     storeSet('ledger-checks', checks);
-    localStorage.removeItem('ledger-session');
+    storeRemove('ledger-session');
     updateSessionPauseBtn();
     tickSessionClock();
     refreshAfterCheckChange();
@@ -2058,8 +2072,7 @@ function initSettingsView(){
       const n = parseInt(inp.value, 10);
       if(!isNaN(n) && n >= 0){
         saveMacroGoals({ [m.id]: n });
-        renderMacros();
-        renderDashMacros();
+        macroRefresh();
       }
     });
   });
@@ -2234,7 +2247,8 @@ function exerciseCard(dayKey, ex, idx){
   const insights = computeInsightsHtml(dayKey, idx, target);
   const noteKey = `${dayKey}-${idx}`;
   const myNote = getMyNote(noteKey);
-  const videoUrl = getMyNote(noteKey + '-video');
+  const rawVideo = getMyNote(noteKey + '-video');
+  const videoUrl = /^https?:\/\//i.test(rawVideo) ? rawVideo : ''; // only render real links
   const timer = ex.restSec ? `<div class="rest-timer"><button class="timer-btn" data-key="${noteKey}" data-sec="${ex.restSec}">Rest ${formatMMSS(ex.restSec)}</button></div>` : '';
   return `<div class="exercise ${cls} ${state.complete ? 'complete' : ''} ${collapsed ? 'collapsed' : ''}" data-day="${dayKey}" data-idx="${idx}">
     <div class="ex-top">
@@ -2262,7 +2276,7 @@ function exerciseCard(dayKey, ex, idx){
       ${ex.note ? `<div class="ex-note"><strong>Technique —</strong> ${ex.note}</div>` : ''}
       <div class="my-note">
         <input class="note-input" data-key="${noteKey}" value="${escapeHtml(myNote)}" placeholder="Add a note… (seat height, cues, how it felt)" aria-label="Personal note">
-        <input class="note-input" data-key="${noteKey}-video" value="${escapeHtml(videoUrl)}" placeholder="▶ Form video link (optional)" aria-label="Form video link">
+        <input class="note-input" data-key="${noteKey}-video" value="${escapeHtml(rawVideo)}" placeholder="▶ Form video link (optional)" aria-label="Form video link">
         ${videoUrl ? `<a href="${escapeHtml(videoUrl)}" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent)">▶ Open form video</a>` : ''}
       </div>
     </details>
@@ -3154,6 +3168,7 @@ function recoveryInsightLines(){
 
 function renderProgress(){
   const body = document.getElementById('progress-body');
+  Object.keys(chartRegistry).forEach(k=>delete chartRegistry[k]); // charts below re-register
   const entries = allHistoryEntries();
   const hist = getHistory();
   const unit = unitLabel();
@@ -3399,7 +3414,6 @@ function updateSuppCount(){
   const taken = supps.filter(s=>today[s.id] && today[s.id].taken).length;
   document.getElementById('supp-count').textContent = `${taken} / ${supps.length} taken`;
   updateDashSupps();
-  renderDashHabits();
 }
 function initSupplements(){
   const listEl = document.getElementById('supp-list');
@@ -3556,7 +3570,6 @@ function renderHabits(){
     </div>`;
   }).join('');
   updateHabitCount();
-  renderDashHabits();
 }
 function updateHabitCount(){
   const el = document.getElementById('habit-count');
@@ -4419,14 +4432,18 @@ function showTab(name){
   if(!TABS.includes(name)) return;
   activeTab = name;
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.dataset.view === name));
-  document.querySelectorAll('.tabbar button').forEach(b=>b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tabbar button').forEach(b=>{
+    const active = b.dataset.tab === name;
+    b.classList.toggle('active', active);
+    if(active) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+  });
   const idx = TABS.indexOf(name);
   document.getElementById('tab-ind').style.transform = `translateX(${idx*100}%)`;
   if(name === 'dashboard') renderDashboard();
   if(name === 'macros') renderMacros();
   if(name === 'progress') renderProgress();
   if(name === 'habits'){ renderSupplements(); renderHabits(); }
-  window.scrollTo({ top:0, behavior:'instant' in window ? 'instant' : 'auto' });
+  window.scrollTo(0, 0);
 }
 function initTabs(){
   document.querySelector('.tabbar').addEventListener('click', e=>{
@@ -4619,14 +4636,14 @@ function init(){
   });
 
   document.getElementById('reset-btn').addEventListener('click', ()=>{
-    localStorage.removeItem('ledger-checks');
+    storeRemove('ledger-checks');
     document.querySelectorAll('.set-box.done').forEach(b=>{ b.classList.remove('done'); b.setAttribute('aria-pressed','false'); });
     document.querySelectorAll('.exercise.complete').forEach(c=>c.classList.remove('complete'));
     refreshAfterCheckChange();
   });
   document.getElementById('reset-weights-btn').addEventListener('click', ()=>{
-    localStorage.removeItem('ledger-weights');
-    localStorage.removeItem('ledger-reps');
+    storeRemove('ledger-weights');
+    storeRemove('ledger-reps');
     showDay(currentDayKey);
   });
   document.getElementById('export-btn').addEventListener('click', exportData);
@@ -4635,6 +4652,15 @@ function init(){
     const file = e.target.files[0];
     if(file) importData(file);
     e.target.value = '';
+  });
+
+  // Escape closes whichever overlay is open (keyboard/desktop accessibility)
+  document.addEventListener('keydown', e=>{
+    if(e.key !== 'Escape') return;
+    if(document.getElementById('confirm-sheet').classList.contains('open')) resolveConfirm(false);
+    else if(document.getElementById('meal-sheet').classList.contains('open')) closeMealPreview();
+    else if(document.getElementById('food-sheet').classList.contains('open')) document.getElementById('food-sheet').classList.remove('open');
+    else if(document.getElementById('rest-sheet').classList.contains('open')) closeRestSheet();
   });
 
   showTab('dashboard');
