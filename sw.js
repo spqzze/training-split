@@ -1,4 +1,4 @@
-const CACHE = 'ledger-v5';
+const CACHE = 'ledger-v12';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -14,6 +14,8 @@ self.addEventListener('activate', e => {
 });
 
 // Network-first so app updates land immediately; cache is the offline fallback.
+// Only same-origin, successful, non-opaque responses are cached; navigations
+// fall back to the cached shell when fully offline.
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   e.respondWith(
