@@ -1119,6 +1119,41 @@
     width:100%;
   }
   .food-form input:focus, .food-form select:focus{ outline:none; border-color:var(--accent); }
+  .food-form .row2{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .label-photo-btn{ align-self:flex-start; }
+  #cf-photo-preview{
+    max-width:100%;
+    max-height:180px;
+    border-radius:var(--r-sm);
+    border:1px solid var(--border);
+    display:block;
+  }
+  #cf-photo-preview[hidden]{ display:none; }
+
+  /* Daily history */
+  .hist-nav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:12px;
+  }
+  .hist-nav .hist-date{ font-size:14px; font-weight:700; }
+  .hist-nav button:disabled{ opacity:0.35; cursor:default; }
+  .hist-fact{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:10px;
+    padding:7px 0;
+    border-bottom:1px solid var(--border);
+    font-size:13px;
+  }
+  .hist-fact:last-of-type{ border-bottom:none; }
+  .hist-fact .f-k{ color:var(--faint); font-size:12px; }
+  .hist-fact .f-v{ font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--dim); text-align:right; }
+  .hist-fact .f-v.good{ color:var(--good); }
+  .hist-meals{ margin-top:4px; }
 
   /* ---------- Confirm dialog ---------- */
   .sheet.center{ align-items:center; padding:0 24px; }
@@ -1358,6 +1393,16 @@
         <div class="card-label">Daily summary</div>
         <div class="kv-list" id="macro-summary"></div>
       </div>
+
+      <div class="card">
+        <div class="card-label">Daily history</div>
+        <div class="hist-nav">
+          <button class="ghost-btn" id="hist-prev" aria-label="Previous day">‹</button>
+          <span class="hist-date" id="hist-date">Today</span>
+          <button class="ghost-btn" id="hist-next" aria-label="Next day">›</button>
+        </div>
+        <div id="history-body"></div>
+      </div>
     </div>
   </div>
 </section>
@@ -1549,24 +1594,36 @@
   <div class="dialog-card" style="text-align:left;max-width:340px">
     <div class="dialog-title">New custom food</div>
     <div class="food-form">
-      <label>Name <input id="cf-name" placeholder="e.g. Mom's lasagna"></label>
-      <label>Serving unit
-        <select id="cf-unit">
-          <option value="serving">serving</option>
-          <option value="oz">oz</option>
-          <option value="cup">cup</option>
-          <option value="scoop">scoop</option>
-          <option value="slice">slice</option>
-          <option value="piece">piece</option>
-          <option value="tbsp">tbsp</option>
-        </select>
+      <label class="ghost-btn label-photo-btn">📷 Add nutrition label photo
+        <input type="file" id="cf-photo" accept="image/*" hidden>
       </label>
+      <img id="cf-photo-preview" alt="Nutrition label reference" hidden>
+      <div class="empty-note" id="cf-photo-note" hidden>Photo stays on this device as a reference while you type — it is never uploaded or saved.</div>
+      <label>Name <input id="cf-name" placeholder="e.g. Mom's lasagna"></label>
+      <div class="row2">
+        <label>Serving unit
+          <select id="cf-unit">
+            <option value="serving">serving</option>
+            <option value="oz">oz</option>
+            <option value="cup">cup</option>
+            <option value="scoop">scoop</option>
+            <option value="slice">slice</option>
+            <option value="piece">piece</option>
+            <option value="tbsp">tbsp</option>
+          </select>
+        </label>
+        <label>Serving size <input id="cf-serving-size" placeholder="e.g. 2/3 cup (55g)"></label>
+      </div>
+      <div class="row2">
+        <label>Servings per container <input id="cf-servings" inputmode="decimal" placeholder="e.g. 8"></label>
+      </div>
       <div class="row4">
         <label>kcal <input id="cf-cal" inputmode="numeric" placeholder="0"></label>
         <label>P (g) <input id="cf-pro" inputmode="numeric" placeholder="0"></label>
         <label>C (g) <input id="cf-carb" inputmode="numeric" placeholder="0"></label>
         <label>F (g) <input id="cf-fat" inputmode="numeric" placeholder="0"></label>
       </div>
+      <div class="empty-note">Macros are per serving. OCR is intentionally not included — Ledger stays fully local, so type the numbers from the label.</div>
     </div>
     <div class="dialog-actions">
       <button id="cf-cancel">Cancel</button>
@@ -1642,7 +1699,7 @@
    ========================================================= */
 
 const APP_VERSION = '3.0.0';
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 
 /* ---------- Training data (source of truth for the plan) ---------- */
 const DATA = {
@@ -1755,7 +1812,7 @@ function migrateStorage(){
     'ledger-habit-defs','ledger-habit-log','ledger-workout-log','ledger-history',
     'ledger-pr-history','ledger-session-log','ledger-settings',
     'ledger-macro-goals','ledger-macro-log','ledger-macro-saved','ledger-macro-foods',
-    'ledger-macro-settings','ledger-macro-analytics'];
+    'ledger-macro-settings','ledger-macro-analytics','ledger-day-notes'];
   KNOWN.forEach(k=>{
     const raw = localStorage.getItem(k);
     if(raw === null) return;
@@ -3711,6 +3768,8 @@ function renderMacros(){
     <div><div class="kv-k">Calories</div><div class="kv-v">${Math.round(t.calories||0)} · ${calPct}%</div></div>
     <div><div class="kv-k">Protein</div><div class="kv-v">${Math.round(t.protein||0)}g · ${proPct}%</div></div>
     <div><div class="kv-k">Carbs / Fat</div><div class="kv-v">${Math.round(t.carbs||0)}g / ${Math.round(t.fat||0)}g</div></div>`;
+
+  renderHistory();
 }
 
 function renderDashMacros(){
@@ -3911,6 +3970,76 @@ function upsertFoodOverride(id, per){
   storeSet('ledger-macro-foods', foods);
 }
 function macroRefresh(){ renderMacros(); renderDashMacros(); }
+
+/* ---------- Day notes ---------- */
+function getDayNotes(){ return storeGet('ledger-day-notes', {}); }
+function saveDayNote(dateStr, text){
+  const notes = getDayNotes();
+  if(text.trim() === '') delete notes[dateStr]; else notes[dateStr] = text;
+  storeSet('ledger-day-notes', notes);
+}
+
+/* ---------- Daily history browser ---------- */
+let historyDate = localDateStr();
+
+function shiftHistoryDay(delta){
+  const d = new Date(historyDate + 'T12:00:00');
+  d.setDate(d.getDate() + delta);
+  if(localDateStr(d) > localDateStr()) return; // no future days
+  historyDate = localDateStr(d);
+  renderHistory();
+}
+
+function historyDateLabel(){
+  const today = localDateStr();
+  if(historyDate === today) return 'Today';
+  const d = new Date(historyDate + 'T12:00:00');
+  const yest = new Date(); yest.setDate(yest.getDate()-1);
+  if(historyDate === localDateStr(yest)) return 'Yesterday';
+  return d.toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' });
+}
+
+function renderHistory(){
+  const body = document.getElementById('history-body');
+  if(!body) return;
+  document.getElementById('hist-date').textContent = historyDateLabel();
+  document.getElementById('hist-next').disabled = historyDate === localDateStr();
+
+  const dayKey = DAY_ORDER[new Date(historyDate + 'T12:00:00').getDay()];
+  const plan = DATA[dayKey];
+  const isToday = historyDate === localDateStr();
+
+  // Workout line
+  let workout, workoutCls = '';
+  if(plan.rest){ workout = '☾ Rest day'; }
+  else if(getWorkoutLog()[historyDate]){ workout = `✓ ${plan.title} completed`; workoutCls = 'good'; }
+  else if(isToday){ workout = `· ${plan.title} — in progress`; }
+  else { workout = `— ${plan.title} not logged`; }
+
+  const bw = getBodyweights()[historyDate];
+  const day = getMacroDay(historyDate);
+  const t = day.totals;
+  const goals = getMacroGoals();
+  const calPct = goals.calories ? Math.round(((t.calories||0)/goals.calories)*100) : 0;
+
+  const mealsHtml = day.meals.length
+    ? day.meals.map(m=>`<div class="meal-row">
+        <span class="m-name">${escapeHtml(m.name)}<span class="m-qty">${escapeHtml(m.time||'')}</span></span>
+        <span class="m-macros">${Math.round(m.calories)} kcal · P${Math.round(m.protein)} C${Math.round(m.carbs)} F${Math.round(m.fat)}</span>
+      </div>`).join('')
+    : `<div class="empty-note">No meals logged this day.</div>`;
+
+  body.innerHTML = `
+    <div class="hist-fact"><span class="f-k">Workout</span><span class="f-v ${workoutCls}">${escapeHtml(workout)}</span></div>
+    <div class="hist-fact"><span class="f-k">Bodyweight</span><span class="f-v">${bw ? escapeHtml(bw) + ' ' + unitLabel() : '—'}</span></div>
+    <div class="hist-fact"><span class="f-k">Macros</span><span class="f-v">${Math.round(t.calories||0)} kcal (${calPct}%) · P${Math.round(t.protein||0)} C${Math.round(t.carbs||0)} F${Math.round(t.fat||0)}</span></div>
+    <div class="hist-meals">${mealsHtml}</div>
+    <input class="note-input" id="hist-note" style="margin-top:10px" placeholder="Note for this day… (energy, digestion, anything)" value="${escapeHtml(getDayNotes()[historyDate] || '')}" aria-label="Day note">`;
+
+  document.getElementById('hist-note').addEventListener('input', e=>{
+    saveDayNote(historyDate, e.target.value);
+  });
+}
 
 // Seed the favorites list once with the everyday staples.
 function seedFavorites(){
@@ -4171,23 +4300,55 @@ function initMacros(){
     }
   });
 
-  // Custom food sheet
+  // Daily history navigation
+  document.getElementById('hist-prev').addEventListener('click', ()=>shiftHistoryDay(-1));
+  document.getElementById('hist-next').addEventListener('click', ()=>shiftHistoryDay(1));
+
+  // Custom food sheet (with local-only nutrition-label photo reference)
   const foodSheet = document.getElementById('food-sheet');
+  const photoInput = document.getElementById('cf-photo');
+  const photoPreview = document.getElementById('cf-photo-preview');
+  const photoNote = document.getElementById('cf-photo-note');
+  function clearFoodPhoto(){
+    photoInput.value = '';
+    photoPreview.src = '';
+    photoPreview.hidden = true;
+    photoNote.hidden = true;
+  }
+  photoInput.addEventListener('change', ()=>{
+    const file = photoInput.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      photoPreview.src = reader.result; // in-memory data URL — never persisted, never sent anywhere
+      photoPreview.hidden = false;
+      photoNote.hidden = false;
+    };
+    reader.readAsDataURL(file);
+  });
   document.getElementById('custom-food-btn').addEventListener('click', ()=>{
     foodSheet.classList.add('open');
     setTimeout(()=>document.getElementById('cf-name').focus(), 100);
   });
-  document.getElementById('cf-cancel').addEventListener('click', ()=>foodSheet.classList.remove('open'));
-  foodSheet.addEventListener('click', e=>{ if(e.target === e.currentTarget) foodSheet.classList.remove('open'); });
+  function closeFoodSheet(){
+    foodSheet.classList.remove('open');
+    clearFoodPhoto();
+  }
+  document.getElementById('cf-cancel').addEventListener('click', closeFoodSheet);
+  foodSheet.addEventListener('click', e=>{ if(e.target === e.currentTarget) closeFoodSheet(); });
   document.getElementById('cf-save').addEventListener('click', ()=>{
     const name = document.getElementById('cf-name').value.trim();
     const cal = parseFloat(document.getElementById('cf-cal').value);
     if(!name || isNaN(cal)){ showToast('A name and calories are required'); return; }
     const foods = getCustomFoods();
+    const servingSize = document.getElementById('cf-serving-size').value.trim();
+    const servingsPer = parseFloat(document.getElementById('cf-servings').value);
     foods.push({
       id:'custom-' + Date.now(), name, custom:true,
       unit: document.getElementById('cf-unit').value,
       aliases:[normFoodText(name)],
+      servingSize: servingSize || undefined,
+      servingsPerContainer: isNaN(servingsPer) ? undefined : servingsPer,
       calories: cal,
       protein: parseFloat(document.getElementById('cf-pro').value) || 0,
       carbs: parseFloat(document.getElementById('cf-carb').value) || 0,
@@ -4195,8 +4356,8 @@ function initMacros(){
     });
     storeSet('ledger-macro-foods', foods);
     rebuildFoodIndex();
-    foodSheet.classList.remove('open');
-    ['cf-name','cf-cal','cf-pro','cf-carb','cf-fat'].forEach(id=>document.getElementById(id).value = '');
+    closeFoodSheet();
+    ['cf-name','cf-serving-size','cf-servings','cf-cal','cf-pro','cf-carb','cf-fat'].forEach(id=>document.getElementById(id).value = '');
     showToast(`Added ${name} — type its name to log it`, 'info');
   });
 }
