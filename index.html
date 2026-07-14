@@ -1555,6 +1555,15 @@
       <div class="card set-group">
         <div class="card-label">Training plan</div>
         <div class="set-line">
+          <span class="k">Export split as text<span class="hint">organized .txt you can edit anywhere</span></span>
+          <button class="ghost-btn" id="btn-export-split">Export</button>
+        </div>
+        <div class="set-line">
+          <span class="k">Import split from text<span class="hint">matches exercises by name so history stays linked</span></span>
+          <button class="ghost-btn" id="btn-import-split">Import</button>
+          <input type="file" id="split-file" accept=".txt,text/plain" hidden>
+        </div>
+        <div class="set-line">
           <span class="k">Restore removed exercise<span class="hint">put a removed exercise back on its day</span></span>
           <button class="ghost-btn" id="btn-restore-ex">Restore</button>
         </div>
@@ -4328,6 +4337,14 @@ function initExManagement(){
     if(item) fillExForm(item);
   });
 
+  document.getElementById('btn-export-split').addEventListener('click', exportSplitTxt);
+  document.getElementById('btn-import-split').addEventListener('click', ()=>document.getElementById('split-file').click());
+  document.getElementById('split-file').addEventListener('change', e=>{
+    const file = e.target.files[0];
+    if(file) importSplitTxt(file);
+    e.target.value = '';
+  });
+
   document.getElementById('btn-restore-ex').addEventListener('click', async ()=>{
     const removed = Object.entries(getPlan().removed);
     if(!removed.length){ showToast('No removed exercises to restore'); return; }
@@ -4372,6 +4389,171 @@ function initExManagement(){
     }
     showToast('Training split reset', 'info');
   });
+}
+
+/* =========================================================
+   Split <-> text export/import
+   ========================================================= */
+function splitToTxt(){
+  const lines = [
+    '# Ledger Training Split — exported ' + localDateStr(),
+    '# Edit this file, then import it back: Settings → Training plan → Import.',
+    '# Exercise line:  Name | muscle | sets x min-max reps | weight | RIR min-max | rest seconds | style',
+    '# style: straight, myo, or superset. Optional indented lines: note:, progression:, tag:, secondary:',
+    '# Reordering lines reorders the day. Deleting a line removes the exercise (history is kept).',
+    '# Days you leave out of the file are left untouched.',
+  ];
+  Object.keys(DATA).forEach(k=>{
+    const day = planDay(k);
+    lines.push('');
+    if(day.rest){ lines.push(`== ${DAY_NAMES[k]} — Rest`); return; }
+    lines.push(`== ${DAY_NAMES[k]} — ${day.title} (${day.sub})`);
+    lines.push('');
+    day.exercises.forEach(ex=>{
+      const st = toStructured(ex);
+      const weight = getWeightValue(ex.id + '-w', st.weight) || '-';
+      lines.push(`${st.name} | ${st.muscle} | ${st.sets} x ${st.repMin}-${st.repMax} | ${weight} | RIR ${st.rirMin}-${st.rirMax} | rest ${st.restSec} | ${st.style}`);
+      if(st.muscle2) lines.push(`  secondary: ${st.muscle2}`);
+      if(st.tag) lines.push(`  tag: ${st.tag}`);
+      if(st.note) lines.push(`  note: ${st.note}`);
+      if(st.prog) lines.push(`  progression: ${st.prog}`);
+    });
+  });
+  return lines.join('\n') + '\n';
+}
+function exportSplitTxt(){
+  const blob = new Blob([splitToTxt()], { type:'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ledger-split-${localDateStr()}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast('Split exported', 'info');
+}
+function normMuscleName(v){
+  const q = String(v || '').trim().toLowerCase();
+  if(MUSCLE_LABELS[q]) return q;
+  const hit = Object.entries(MUSCLE_LABELS).find(([, label])=>label.toLowerCase() === q);
+  return hit ? hit[0] : null;
+}
+function parseSplitTxt(text){
+  const dayByName = {};
+  Object.entries(DAY_NAMES).forEach(([k, n])=>{
+    dayByName[n.toLowerCase()] = k;
+    dayByName[k] = k;
+  });
+  const days = {};
+  const errors = [];
+  let cur = null, curEx = null;
+  String(text).split(/\r?\n/).forEach((raw, i)=>{
+    const t = raw.trim();
+    if(!t || t.startsWith('#')) return;
+    if(t.startsWith('==')){
+      const head = t.slice(2).trim();
+      const dname = head.split(/[—–\-(]/)[0].trim().toLowerCase();
+      const key = dayByName[dname];
+      curEx = null;
+      if(!key){ errors.push(`Line ${i+1}: unknown day "${head.slice(0,30)}"`); cur = null; return; }
+      if(DATA[key].rest){ cur = null; return; } // rest days aren't editable
+      cur = key;
+      days[key] = days[key] || [];
+      return;
+    }
+    const sub = /^(note|progression|tag|secondary)\s*:\s*(.*)$/i.exec(t);
+    if(sub){
+      if(!curEx){ errors.push(`Line ${i+1}: "${sub[1]}:" line without an exercise above it`); return; }
+      const v = sub[2].trim();
+      const f = sub[1].toLowerCase();
+      if(f === 'note') curEx.note = v;
+      else if(f === 'progression') curEx.prog = v;
+      else if(f === 'tag') curEx.tag = v;
+      else curEx.muscle2 = normMuscleName(v) || '';
+      return;
+    }
+    if(!cur){ errors.push(`Line ${i+1}: exercise before any "== Day" header`); return; }
+    const parts = t.split('|').map(x=>x.trim());
+    if(parts.length < 3){ errors.push(`Line ${i+1}: expected "Name | muscle | sets x reps | …"`); return; }
+    const sr = /(\d+)\s*[x×]\s*(\d+)\s*[-–]\s*(\d+)/i.exec(parts[2]);
+    if(!parts[0] || !sr){ errors.push(`Line ${i+1}: couldn't read "sets x min-max" in "${parts[2]}"`); return; }
+    const def = {
+      name: parts[0], muscle: normMuscleName(parts[1]) || 'other', muscle2:'',
+      type:'compound', style:'straight',
+      sets: Math.max(1, +sr[1]), repMin: +sr[2], repMax: +sr[3],
+      weight:'', rirMin:0, rirMax:2, restSec:90,
+      note:'', prog:'', tag:'', structured:true,
+    };
+    parts.slice(3).forEach(pt=>{
+      const rir = /RIR\s*(\d+)\s*[-–]\s*(\d+)/i.exec(pt);
+      const rest = /rest\s*(\d+)/i.exec(pt);
+      if(rir){ def.rirMin = +rir[1]; def.rirMax = +rir[2]; }
+      else if(rest){ def.restSec = +rest[1]; }
+      else if(/^(straight|myo|superset)$/i.test(pt)){ def.style = pt.toLowerCase(); }
+      else if(pt && pt !== '-'){ def.weight = pt; }
+    });
+    days[cur].push(def);
+    curEx = def;
+  });
+  return { days, errors };
+}
+const SPLIT_CMP_FIELDS = ['muscle','muscle2','style','sets','repMin','repMax','rirMin','rirMax','restSec','note','prog','tag'];
+function applySplitImport(parsed){
+  const p = getPlan();
+  let added = 0, changed = 0, removed = 0;
+  Object.entries(parsed.days).forEach(([key, defs])=>{
+    const pool = [...planDay(key).exercises];
+    const order = [];
+    defs.forEach(def=>{
+      const mi = pool.findIndex(ex=>ex.name.trim().toLowerCase() === def.name.trim().toLowerCase());
+      if(mi >= 0){
+        const ex = pool.splice(mi, 1)[0];
+        order.push(ex.id);
+        const cur = toStructured(ex);
+        const curW = getWeightValue(ex.id + '-w', cur.weight) || '';
+        const same = SPLIT_CMP_FIELDS.every(f=>String(cur[f] ?? '') === String(def[f] ?? ''))
+          && (def.weight || '') === curW;
+        if(!same){
+          if((def.weight || '') !== curW) saveWeight(ex.id + '-w', def.weight);
+          p.defs[ex.id] = { ...(p.defs[ex.id] || {}), ...def, id: ex.id, structured:true };
+          changed++;
+        }
+      } else {
+        const id = newExId();
+        p.defs[id] = { ...def, id, custom:true };
+        order.push(id);
+        added++;
+      }
+    });
+    pool.forEach(ex=>{ // in the file's day but missing from it → removed, history kept
+      p.removed[ex.id] = { day:key, when:localDateStr(), name:ex.name };
+      removed++;
+    });
+    p.days[key] = { ...(p.days[key] || {}), order };
+  });
+  savePlan(p);
+  return { added, changed, removed };
+}
+async function importSplitTxt(file){
+  const text = await file.text();
+  const parsed = parseSplitTxt(text);
+  const dayCount = Object.keys(parsed.days).length;
+  const exCount = Object.values(parsed.days).reduce((a, d)=>a + d.length, 0);
+  if(!dayCount || !exCount){
+    showToast(parsed.errors[0] || 'Import failed — no exercises found');
+    return;
+  }
+  const errNote = parsed.errors.length ? ` ${parsed.errors.length} line(s) were skipped (e.g. ${parsed.errors[0]}).` : '';
+  const ok = await appConfirm({
+    title:'Apply imported split?',
+    message:`${exCount} exercises across ${dayCount} day(s). Exercises matched by name keep their history; missing lines are removed (restorable).${errNote}`,
+    confirmLabel:'Apply'
+  });
+  if(!ok) return;
+  const r = applySplitImport(parsed);
+  refreshAfterPlanChange();
+  showToast(`Imported — ${r.added} added · ${r.changed} updated · ${r.removed} removed`, 'info');
 }
 
 /* =========================================================
