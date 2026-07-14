@@ -1436,11 +1436,12 @@
       <div class="card">
         <div class="card-label">Quick meal <span class="mini">type what you ate</span></div>
         <div class="quick-meal-row">
-          <input class="note-input" id="meal-input" placeholder='e.g. "12 oz chicken, 1 cup rice"' aria-label="Meal description">
+          <input class="note-input" id="meal-input" placeholder='e.g. "150 g rice, 6 oz chicken"' aria-label="Meal description" autocomplete="off">
           <button class="ghost-btn" id="meal-add-btn">Log</button>
           <button class="ghost-btn" id="custom-food-btn" aria-label="New custom food">+ Food</button>
         </div>
-        <div class="empty-note" style="padding-top:8px">Try: "12 oz chicken, 1 cup cooked rice, 1 banana" — multiple foods in one line work.</div>
+        <div class="lib-results" id="food-suggest" hidden></div>
+        <div class="empty-note" style="padding-top:8px">Multiple foods in one line work — grams, oz, lb, cups, scoops, slices. <span id="food-db-status">Loading food database…</span></div>
       </div>
 
       <div class="card">
@@ -4734,6 +4735,11 @@ function effFood(food){
   return o ? { ...food, calories:o.calories, protein:o.protein, carbs:o.carbs, fat:o.fat } : food;
 }
 function foodById(id){
+  if(typeof id === 'string' && id.startsWith('usda:')){
+    const name = id.slice(5).toLowerCase();
+    const e = (USDA_FOODS || []).find(x=>x.lower === name);
+    return e ? usdaToFood(e) : null;
+  }
   return FOOD_DB.find(f=>f.id === id) || getCustomFoodList().find(f=>f.id === id) || null;
 }
 
@@ -4758,9 +4764,80 @@ function matchFood(text){
   return null;
 }
 
+/* ---------- USDA food database (foods.txt, per 100 g) ---------- */
+let USDA_FOODS = null;        // [{name, lower, norm, cal, p, c, f}] — per 100 g
+let USDA_NORM = null;         // normalized-name -> entry, for exact lookups
+let usdaLoadPromise = null;
+function loadUsdaFoods(){
+  if(usdaLoadPromise) return usdaLoadPromise;
+  usdaLoadPromise = fetch('foods.txt')
+    .then(r=>{ if(!r.ok) throw new Error('http ' + r.status); return r.text(); })
+    .then(text=>{
+      const foods = [];
+      text.split('\n').forEach(line=>{
+        if(!line || line.startsWith('#')) return;
+        const parts = line.split('|');
+        if(parts.length !== 5) return;
+        const cal = +parts[1], pr = +parts[2], cb = +parts[3], ft = +parts[4];
+        if(isNaN(cal)) return;
+        foods.push({ name: parts[0], lower: parts[0].toLowerCase(), norm: normFoodText(parts[0]), cal, p: pr, c: cb, f: ft });
+      });
+      USDA_FOODS = foods;
+      USDA_NORM = new Map(foods.map(e=>[e.norm, e]));
+      const st = document.getElementById('food-db-status');
+      if(st) st.textContent = `${foods.length.toLocaleString()} USDA foods + your customs · all offline`;
+      return foods;
+    })
+    .catch(()=>{
+      USDA_FOODS = [];
+      const st = document.getElementById('food-db-status');
+      if(st) st.textContent = 'Built-in foods + your customs';
+      return [];
+    });
+  return usdaLoadPromise;
+}
+// A USDA entry as a food object the rest of the pipeline understands
+// (unit "g", macros per gram, stable "usda:" id).
+function usdaToFood(e){
+  return {
+    id: 'usda:' + e.name, name: e.name, unit: 'g', usda: true,
+    calories: e.cal/100, protein: e.p/100, carbs: e.c/100, fat: e.f/100,
+  };
+}
+function searchUsda(query, limit){
+  if(!USDA_FOODS || !USDA_FOODS.length) return [];
+  const tokens = normFoodText(query).split(' ').filter(t=>t.length >= 2);
+  if(!tokens.length) return [];
+  const scored = [];
+  for(const e of USDA_FOODS){
+    let hits = 0;
+    for(const t of tokens) if(e.lower.includes(t)) hits++;
+    if(!hits) continue;
+    scored.push({ e, score: hits / tokens.length, len: e.name.length, starts: e.lower.startsWith(tokens[0]) ? 0 : 1 });
+  }
+  scored.sort((a,b)=>b.score - a.score || a.starts - b.starts || a.len - b.len);
+  return scored.slice(0, limit || 6).map(x=>x.e);
+}
+function usdaExact(text){
+  if(!USDA_NORM) return null;
+  const e = USDA_NORM.get(normFoodText(String(text)));
+  return e ? usdaToFood(e) : null;
+}
+// Best single match for the parser: only accept when every token matched.
+function usdaMatch(text){
+  const top = searchUsda(text, 1)[0];
+  if(!top) return null;
+  const tokens = normFoodText(text).split(' ').filter(t=>t.length >= 2);
+  const hits = tokens.filter(t=>top.lower.includes(t)).length;
+  return hits === tokens.length ? usdaToFood(top) : null;
+}
+
 /* ---------- Natural-language meal parser ---------- */
 const UNIT_MAP = {
   'oz':'oz','ounce':'oz','ounces':'oz','fl oz':'oz','floz':'oz',
+  'g':'g','gram':'g','grams':'g','gr':'g',
+  'kg':'kg','kgs':'kg','kilogram':'kg','kilograms':'kg',
+  'lb':'lb','lbs':'lb','pound':'lb','pounds':'lb',
   'cup':'cup','cups':'cup',
   'scoop':'scoop','scoops':'scoop',
   'slice':'slice','slices':'slice',
@@ -4783,13 +4860,20 @@ function parseQty(raw){
 }
 
 // Convert a parsed quantity+unit into servings of the food's own unit.
+const MASS_G = { g:1, kg:1000, oz:28.35, lb:453.59 };
 function servingsFor(food, qty, unit){
-  if(!unit) return { servings: qty };
+  if(!unit){
+    // USDA foods are per-gram; a bare quantity means that many 100 g servings.
+    return { servings: food.unit === 'g' ? qty * 100 : qty };
+  }
   if(unit === food.unit) return { servings: qty };
   if(food.liquid){
     if(unit === 'cup' && food.unit === 'oz') return { servings: qty * 8 };
     if(unit === 'oz' && food.unit === 'cup') return { servings: qty / 8 };
   }
+  // Mass-to-mass conversions (grams <-> ounces <-> pounds)
+  if(MASS_G[unit] && food.unit === 'g') return { servings: qty * MASS_G[unit] };
+  if(MASS_G[unit] && food.unit === 'oz') return { servings: qty * MASS_G[unit] / MASS_G.oz };
   if(COUNT_UNITS.includes(unit) && COUNT_UNITS.includes(food.unit)) return { servings: qty };
   return { servings: qty, approx: true };
 }
@@ -4798,7 +4882,7 @@ function servingsFor(food, qty, unit){
 function parseMealText(text){
   const segments = String(text).split(/,|;|\+|\band\b/i).map(s=>s.trim()).filter(Boolean);
   const items = [];
-  const SEG_RE = /^\s*(\d+\s*\/\s*\d+|\d+(?:\.\d+)?|a|an|half)?\s*(fl\s?oz|ounces?|oz|cups?|scoops?|slices?|pieces?|servings?|tbsps?|tablespoons?|bowls?)?\.?\s*(?:of\s+)?(.*)$/i;
+  const SEG_RE = /^\s*(\d+\s*\/\s*\d+|\d+(?:\.\d+)?|a|an|half)?\s*(fl\s?oz|ounces?|oz|grams?|g|kilograms?|kgs?|kg|pounds?|lbs?|lb|cups?|scoops?|slices?|pieces?|servings?|tbsps?|tablespoons?|bowls?)?\b\.?\s*(?:of\s+)?(.*)$/i;
   segments.forEach(seg=>{
     const m = seg.match(SEG_RE);
     if(!m) return;
@@ -4806,7 +4890,14 @@ function parseMealText(text){
     const unit = m[2] ? UNIT_MAP[m[2].toLowerCase().replace(/\s+/g,' ')] || null : null;
     const foodText = (m[3] || '').trim();
     if(!foodText && !unit) return;
-    const food = matchFood(foodText || seg);
+    let food = usdaExact(foodText) || matchFood(foodText || seg);
+    if(!food) food = usdaMatch(foodText || seg);
+    // "150 g rice" against a cup-based curated food would be nonsense —
+    // grams need a gram- or ounce-based food, so try USDA in that case.
+    if(food && unit && MASS_G[unit] && food.unit !== 'g' && food.unit !== 'oz'){
+      const alt = usdaMatch(foodText || seg);
+      if(alt) food = alt;
+    }
     if(!food){
       items.push({ raw: seg, unknown: true });
       return;
@@ -4816,7 +4907,7 @@ function parseMealText(text){
     items.push({
       raw: seg,
       food,
-      qty,
+      qty: (!unit && food.unit === 'g') ? servings : qty, // bare USDA qty means 100 g servings — show grams
       unit: unit || food.unit,
       servings,
       approx: !!approx,
@@ -5096,16 +5187,68 @@ function openMealEditor(meal){
 
 function handleMealInput(){
   const input = document.getElementById('meal-input');
+  document.getElementById('food-suggest').hidden = true;
   const text = input.value.trim();
   if(!text){ showToast('Type what you ate first'); return; }
   openMealPreview(parseMealText(text).items);
 }
 
 /* ---------- Wiring ---------- */
+/* Live food suggestions under the quick-meal input. Suggests for the
+   segment currently being typed (after the last comma/"and"). */
+let suggestTimer = null;
+function currentMealSegment(){
+  const input = document.getElementById('meal-input');
+  const segs = input.value.split(/,|;|\+|\band\b/i);
+  const seg = segs[segs.length-1];
+  const m = /^\s*(\d+\s*\/\s*\d+|\d+(?:\.\d+)?|a|an|half)?\s*([a-z]+)?\.?\s*(?:of\s+)?(.*)$/i.exec(seg) || [];
+  const unitTok = m[2] && UNIT_MAP[m[2].toLowerCase()] ? m[2] : '';
+  const foodText = unitTok ? (m[3] || '') : ((m[2] || '') + ' ' + (m[3] || ''));
+  return { seg, prefix: seg.slice(0, seg.length - foodText.trim().length), foodText: foodText.trim() };
+}
+function renderFoodSuggest(){
+  const box = document.getElementById('food-suggest');
+  const { foodText } = currentMealSegment();
+  if(foodText.length < 3){ box.hidden = true; return; }
+  if(usdaExact(foodText)){ box.hidden = true; return; } // already an exact pick
+  const hits = searchUsda(foodText, 5);
+  if(!hits.length){ box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = hits.map((e,i)=>
+    `<button type="button" data-sg="${i}"><span>${escapeHtml(e.name)}</span><span class="lib-meta">${Math.round(e.cal)} kcal / 100 g</span></button>`
+  ).join('');
+  box._hits = hits;
+}
+function applySuggestion(e){
+  const input = document.getElementById('meal-input');
+  const box = document.getElementById('food-suggest');
+  const segs = input.value.split(/(,|;|\+|\band\b)/i);
+  const { prefix, foodText } = currentMealSegment();
+  const hasQty = /\d/.test(prefix);
+  segs[segs.length-1] = (hasQty ? prefix : ' 100 g ') + e.name.split(',').map(x=>x.trim()).join(' ');
+  input.value = segs.join('').replace(/^\s+/, '');
+  box.hidden = true;
+  input.focus();
+}
+
 function initMacros(){
   rebuildFoodIndex();
   seedFavorites();
   buildMacroCards();
+  loadUsdaFoods();
+
+  const mealInput = document.getElementById('meal-input');
+  mealInput.addEventListener('input', ()=>{
+    clearTimeout(suggestTimer);
+    suggestTimer = setTimeout(renderFoodSuggest, 120);
+  });
+  document.getElementById('food-suggest').addEventListener('click', e=>{
+    const btn = e.target.closest('button[data-sg]');
+    if(!btn) return;
+    const hits = document.getElementById('food-suggest')._hits || [];
+    const hit = hits[parseInt(btn.dataset.sg, 10)];
+    if(hit) applySuggestion(hit);
+  });
 
   document.getElementById('dash-macros').addEventListener('click', ()=>showTab('macros'));
   document.getElementById('dash-macros').addEventListener('keydown', e=>{

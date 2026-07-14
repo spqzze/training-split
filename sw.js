@@ -1,5 +1,5 @@
-const CACHE = 'ledger-v14';
-const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
+const CACHE = 'ledger-v15';
+const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './foods.txt'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
